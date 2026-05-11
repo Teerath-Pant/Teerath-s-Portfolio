@@ -1,0 +1,19 @@
+{
+  "scripts": {
+    "dev": "node scripts/dev.js",
+    "dev:web": "npm --prefix app/web run dev",
+    "dev:admin": "npm --prefix app/admin run dev",
+    "build": "npm --prefix app/web run build",
+    "build:web": "npm --prefix app/web run build",
+    "build:admin": "npm --prefix app/admin run build",
+    "preview": "npm --prefix app/web run preview",
+    "preview:admin": "npm --prefix app/admin run preview"
+  },
+  "dependencies": {
+    "@orpc/zod": "^1.14.2",
+    "@tailwindcss/vite": "^4.2.2",
+    "express": "^5.2.1",
+    "node": "^26.1.0",
+    "tailwindcss": "^4.2.2"
+  }
+}

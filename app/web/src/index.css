@@ -1,0 +1,186 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;1,14..32,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
+@import "tailwindcss";
+
+@theme {
+  --font-heading: "Plus Jakarta Sans", sans-serif;
+  --font-sans: "Inter", sans-serif;
+}
+
+:root {
+  --bg: #090f1c;
+  --card: #0f1c35;
+  --card-soft: rgba(22, 38, 70, 0.82);
+  --card-strong: rgba(22, 38, 70, 0.96);
+  --accent: #4f8ef7;
+  --accent-soft: #93c5fd;
+  --accent-glow: rgba(79, 142, 247, 0.35);
+  --text: #e2e8f0;
+  font-family: var(--font-sans);
+  color: var(--text);
+  background: #090f1c;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100dvh;
+  background: var(--bg);
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100dvh;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* ─── Scrollbar ─────────────────────────────── */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(79, 142, 247, 0.3);
+  border-radius: 100px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(79, 142, 247, 0.55);
+}
+
+/* ─── Selection ─────────────────────────────── */
+::selection {
+  background: rgba(79, 142, 247, 0.35);
+  color: #fff;
+}
+
+/* ─── Device frame shadow ───────────────────── */
+.device-shadow {
+  box-shadow:
+    0 32px 100px rgba(0, 0, 0, 0.7),
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+/* ─── Page scroll container ─────────────────── */
+.page-scroll {
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(79,142,247,0.3) transparent;
+}
+
+/* ─── Glass card ────────────────────────────── */
+.glass-card {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ─── Nav icon active glow ───────────────────── */
+.nav-active {
+  background: rgba(79, 142, 247, 0.15);
+  color: var(--accent-soft);
+}
+
+/* ─── Gradient text utility ─────────────────── */
+.gradient-text {
+  background: linear-gradient(135deg, #93c5fd, #4f8ef7, #818cf8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Shimmer animation ─────────────────────── */
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+.shimmer {
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.09) 50%, rgba(255,255,255,0.04) 75%);
+  background-size: 200% auto;
+  animation: shimmer 3s linear infinite;
+}
+
+/* ─── Floating animation ────────────────────── */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+/* ─── Pulse glow ────────────────────────────── */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 var(--accent-glow); }
+  50% { box-shadow: 0 0 0 8px transparent; }
+}
+
+/* ─── Backdrop for page sections ──────────────── */
+.section-header {
+  background: linear-gradient(135deg, rgba(79,142,247,0.08), rgba(129,140,248,0.05));
+  border: 1px solid rgba(79, 142, 247, 0.15);
+  border-radius: 1.5rem;
+}
+
+/* ─── Skill bar track ────────────────────────── */
+.skill-track {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 100px;
+  overflow: hidden;
+  height: 8px;
+}
+.skill-fill {
+  height: 100%;
+  width: 0;
+  border-radius: 100px;
+  background: linear-gradient(90deg, #4f8ef7, #818cf8);
+  box-shadow: 0 0 10px rgba(79, 142, 247, 0.5);
+}
+
+/* ─── Form inputs ────────────────────────────── */
+.form-input {
+  width: 100%;
+  background: rgba(9, 15, 28, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  color: #fff;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  font-family: var(--font-sans);
+}
+.form-input::placeholder {
+  color: rgba(148, 163, 184, 0.5);
+}
+.form-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(79, 142, 247, 0.15);
+}
+
+/* ─── Background ambient layers ─────────────── */
+.ambient-bg {
+  background:
+    radial-gradient(ellipse at 15% 0%, rgba(79,142,247,0.18) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 10%, rgba(129,140,248,0.12) 0%, transparent 45%),
+    radial-gradient(ellipse at 50% 100%, rgba(14,165,233,0.1) 0%, transparent 40%),
+    linear-gradient(180deg, #0b1323 0%, #090f1c 60%);
+}
+
+/* ─── Responsive breakpoints helper ─────────── */
+/* On md+ screens, the phone frame expands gracefully */
+@media (min-width: 768px) {
+  .device-frame {
+    /* handled via Tailwind classes in JSX */
+  }
+}

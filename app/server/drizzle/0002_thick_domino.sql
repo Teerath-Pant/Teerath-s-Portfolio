@@ -1,0 +1,2 @@
+ALTER TABLE `admins` MODIFY COLUMN `id` int AUTO_INCREMENT NOT NULL;--> statement-breakpoint
+ALTER TABLE `projects` MODIFY COLUMN `id` int AUTO_INCREMENT NOT NULL;
