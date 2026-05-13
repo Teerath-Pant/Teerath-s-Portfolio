@@ -326,6 +326,68 @@ function portfolioWriterPlugin() {
 
         const body = await parseBody(req)
         try {
+          const conn = await pool.getConnection()
+          try {
+            await conn.beginTransaction()
+
+            await conn.execute('TRUNCATE TABLE portfolio_profile')
+            if (body.profile) {
+              await conn.execute('INSERT INTO portfolio_profile (name, title, location, headline, subtext, available_for_work) VALUES (?, ?, ?, ?, ?, ?)', [body.profile.name, body.profile.title, body.profile.location, body.profile.headline, body.profile.subtext, body.profile.availableForWork ? 1 : 0])
+            }
+
+            await conn.execute('TRUNCATE TABLE portfolio_goals')
+            if (body.goals) {
+              for (const g of body.goals) await conn.execute('INSERT INTO portfolio_goals (text) VALUES (?)', [g])
+            }
+
+            await conn.execute('TRUNCATE TABLE portfolio_audience')
+            if (body.audience) {
+              for (const a of body.audience) await conn.execute('INSERT INTO portfolio_audience (text) VALUES (?)', [a])
+            }
+
+            await conn.execute('TRUNCATE TABLE portfolio_bio_points')
+            if (body.bioPoints) {
+              for (const bp of body.bioPoints) await conn.execute('INSERT INTO portfolio_bio_points (icon, label, value) VALUES (?, ?, ?)', [bp.icon, bp.label, bp.value])
+            }
+
+            await conn.execute('TRUNCATE TABLE portfolio_projects')
+            if (body.projectCards) {
+              for (const p of body.projectCards) await conn.execute('INSERT INTO portfolio_projects (title, description, tag, link) VALUES (?, ?, ?, ?)', [p.title, p.description, p.tag, p.link])
+            }
+
+            await conn.execute('TRUNCATE TABLE portfolio_skill_levels')
+            if (body.skillLevels) {
+              for (const s of body.skillLevels) await conn.execute('INSERT INTO portfolio_skill_levels (label, value) VALUES (?, ?)', [s.label, s.value])
+            }
+
+            await conn.execute('TRUNCATE TABLE portfolio_technical_mastery')
+            if (body.technicalMastery) {
+              for (const tm of body.technicalMastery) await conn.execute('INSERT INTO portfolio_technical_mastery (title, icon, skills) VALUES (?, ?, ?)', [tm.title, tm.icon, JSON.stringify(tm.skills || [])])
+            }
+
+            await conn.execute('TRUNCATE TABLE portfolio_future_enhancements')
+            if (body.futureEnhancements) {
+              for (const fe of body.futureEnhancements) await conn.execute('INSERT INTO portfolio_future_enhancements (text) VALUES (?)', [fe])
+            }
+
+            await conn.execute('TRUNCATE TABLE portfolio_socials')
+            if (body.socials) {
+              for (const s of body.socials) await conn.execute('INSERT INTO portfolio_socials (label, href, platform) VALUES (?, ?, ?)', [s.label, s.href, s.platform])
+            }
+
+            await conn.execute('TRUNCATE TABLE portfolio_stats')
+            if (body.stats) {
+              for (const s of body.stats) await conn.execute('INSERT INTO portfolio_stats (value, label) VALUES (?, ?)', [s.value, s.label])
+            }
+
+            await conn.commit()
+          } catch (e) {
+            await conn.rollback()
+            throw e
+          } finally {
+            conn.release()
+          }
+
           const outputPath = resolve(__dirname, '../web/src/data/portfolioData.js')
           const fileContent = generatePortfolioData(body)
           writeFileSync(outputPath, fileContent, 'utf-8')
@@ -340,9 +402,42 @@ function portfolioWriterPlugin() {
       // ─────────────────────────────────────────────────────────
       // PORTFOLIO LOAD: GET /api/load
       // ─────────────────────────────────────────────────────────
-      server.middlewares.use('/api/load', (req, res) => {
+      server.middlewares.use('/api/load', async (req, res) => {
         setCors(res)
-        res.end(JSON.stringify({ ok: true, message: 'use client-side defaults' }))
+        try {
+          const [profiles] = await pool.execute('SELECT * FROM portfolio_profile LIMIT 1')
+          if (profiles.length === 0) {
+            return res.end(JSON.stringify({ ok: true, data: null, message: 'use client-side defaults' }))
+          }
+          
+          const profile = { ...profiles[0], availableForWork: !!profiles[0].available_for_work }
+          const [goalsRows] = await pool.execute('SELECT text FROM portfolio_goals')
+          const [audienceRows] = await pool.execute('SELECT text FROM portfolio_audience')
+          const [bioPointsRows] = await pool.execute('SELECT icon, label, value FROM portfolio_bio_points')
+          const [projectCardsRows] = await pool.execute('SELECT title, description, tag, link FROM portfolio_projects')
+          const [skillLevelsRows] = await pool.execute('SELECT label, value FROM portfolio_skill_levels')
+          const [techMasteryRows] = await pool.execute('SELECT title, icon, skills FROM portfolio_technical_mastery')
+          const [feRows] = await pool.execute('SELECT text FROM portfolio_future_enhancements')
+          const [socialsRows] = await pool.execute('SELECT label, href, platform FROM portfolio_socials')
+          const [statsRows] = await pool.execute('SELECT value, label FROM portfolio_stats')
+
+          const data = {
+            profile,
+            goals: goalsRows.map(r => r.text),
+            audience: audienceRows.map(r => r.text),
+            bioPoints: bioPointsRows,
+            projectCards: projectCardsRows,
+            skillLevels: skillLevelsRows,
+            technicalMastery: techMasteryRows.map(r => ({ ...r, skills: r.skills ? JSON.parse(r.skills) : [] })),
+            futureEnhancements: feRows.map(r => r.text),
+            socials: socialsRows,
+            stats: statsRows
+          }
+
+          res.end(JSON.stringify({ ok: true, data }))
+        } catch (err) {
+          res.end(JSON.stringify({ ok: false, error: String(err) }))
+        }
       })
     },
   }
@@ -363,6 +458,8 @@ export const bioPoints = ${JSON.stringify(d.bioPoints, null, 2)}
 export const projectCards = ${JSON.stringify(d.projectCards, null, 2)}
 
 export const skillLevels = ${JSON.stringify(d.skillLevels, null, 2)}
+
+export const technicalMastery = ${JSON.stringify(d.technicalMastery || [], null, 2)}
 
 export const futureEnhancements = ${JSON.stringify(d.futureEnhancements, null, 2)}
 

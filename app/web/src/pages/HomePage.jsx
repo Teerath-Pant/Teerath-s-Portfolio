@@ -1,9 +1,10 @@
 import { motion as Motion } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
 import profileImage from '../assets/images/profile.png'
 import nexusImg from '../assets/images/nexus.png'
 import syncImg from '../assets/images/sync.png'
 import auraImg from '../assets/images/aura.png'
-import { profile, stats, socials } from '../data/portfolioData'
+import { profile, stats, socials, technicalMastery } from '../data/portfolioData'
 
 // ── Animation helpers ──────────────────────────────────────────────
 const fadeUp = (delay = 0) => ({
@@ -43,7 +44,15 @@ const socialIcons = {
   ),
 }
 
+// Map technical mastery categories to SVG icons
+const masteryIcons = {
+  frontend: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>,
+  backend: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>,
+  devops: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
+}
+
 export default function HomePage({ now }) {
+  const navigate = useNavigate()
 
   const currentWeekday = new Intl.DateTimeFormat(undefined, { weekday: 'long' }).format(now)
   const currentDay = new Intl.DateTimeFormat(undefined, { day: 'numeric' }).format(now)
@@ -53,40 +62,10 @@ export default function HomePage({ now }) {
     <div className="relative flex min-h-full flex-col gap-7 md:gap-10">
 
       {/* ══════════════════════════════════════════════════
-          MOBILE HEADER  (hidden on md+)
-      ══════════════════════════════════════════════════ */}
-      <Motion.section
-        {...fadeUp(0)}
-        className="relative overflow-hidden rounded-[2rem] border border-white/8 bg-white/[0.035] p-5 shadow-[0_18px_48px_rgba(2,6,23,0.22)] backdrop-blur-md md:hidden"
-      >
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(79,142,247,0.18),transparent_62%)]" />
-        <div className="relative flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <p className="text-[10px] font-semibold tracking-[0.24em] text-blue-300/80 uppercase">{currentWeekday}</p>
-            <div className="mt-2 flex items-end gap-2">
-              <p className="font-heading text-5xl font-bold leading-none text-white">{currentDay}</p>
-              <p className="pb-1 text-sm font-medium text-slate-400">{currentMonth}</p>
-            </div>
-          </div>
-          <Motion.div
-            whileTap={{ scale: 0.95 }}
-            className="h-[4.25rem] w-[4.25rem] shrink-0 overflow-hidden rounded-[1.35rem] border border-white/15 bg-cover bg-center shadow-lg"
-            style={{ backgroundImage: `url(${profileImage})` }}
-          />
-        </div>
-        <div className="relative mt-5">
-          <h2 className="font-heading text-xl font-semibold text-white">Welcome back</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-400">
-            Explore my work, skills, profile, and contact details through a clean mobile-first portfolio interface.
-          </p>
-        </div>
-      </Motion.section>
-
-      {/* ══════════════════════════════════════════════════
-          DESKTOP HERO  (hidden below md)
+          HERO SECTION
           Layout: [Profile Card]  |  [Hero Text + Stats]
       ══════════════════════════════════════════════════ */}
-      <section className="hidden md:grid md:grid-cols-[260px_1fr] lg:grid-cols-[300px_1fr] xl:grid-cols-[320px_1fr] gap-6 lg:gap-8 items-stretch">
+      <section className="flex flex-col md:grid md:grid-cols-[260px_1fr] lg:grid-cols-[300px_1fr] xl:grid-cols-[320px_1fr] gap-6 lg:gap-8 items-stretch">
 
         {/* ── LEFT: Profile Card ── */}
         <Motion.div {...fadeUp(0.05)} className="relative overflow-hidden rounded-[2rem] border border-white/8 bg-white/[0.035] backdrop-blur-md shadow-[0_18px_48px_rgba(2,6,23,0.22)] flex flex-col">
@@ -167,7 +146,7 @@ export default function HomePage({ now }) {
             </Motion.p>
 
             {/* Stats row */}
-            <Motion.div {...fadeUp(0.25)} className="mt-8 flex items-center gap-6 lg:gap-10">
+            <Motion.div {...fadeUp(0.25)} className="mt-8 flex flex-wrap items-center gap-6 lg:gap-10">
               {stats.map((s, i) => (
                 <div key={s.label} className="flex flex-col">
                   <span className="font-heading text-center text-3xl font-extrabold text-white lg:text-4xl">{s.value}</span>
@@ -214,6 +193,29 @@ export default function HomePage({ now }) {
           SCROLL REVEAL SECTIONS 
       ══════════════════════════════════════════════════ */}
       
+      {/* Rate This Portfolio Button */}
+      <Motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-50px" }}
+        transition={{ duration: 0.5 }}
+        className="mt-6 md:mt-12 flex justify-center"
+      >
+        <button
+          onClick={() => {
+            navigate('/contact');
+            setTimeout(() => {
+              document.getElementById('feedback-section')?.scrollIntoView({ behavior: 'smooth' });
+            }, 300);
+          }}
+          className="group relative flex items-center gap-2 md:gap-3 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3 text-[11px] md:px-8 md:py-4 md:text-sm font-bold tracking-widest text-white uppercase shadow-[0_0_40px_rgba(79,142,247,0.3)] transition-all duration-300 hover:scale-105 hover:shadow-[0_0_60px_rgba(79,142,247,0.5)] lg:text-base overflow-hidden"
+        >
+          <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.2)_50%,transparent_75%,transparent_100%)] bg-[length:250%_250%,100%_100%] bg-[position:200%_0,0_0] bg-no-repeat transition-[background-position_0s_ease] group-hover:bg-[position:-200%_0,0_0] group-hover:duration-[1500ms]"></div>
+          <span className="text-lg md:text-xl transition-transform group-hover:rotate-12">⭐</span>
+          <span className="relative z-10">Rate This Portfolio</span>
+        </button>
+      </Motion.div>
+
       {/* Featured Work Section */}
       <Motion.section
         initial={{ opacity: 0, y: 30 }}
@@ -294,26 +296,10 @@ export default function HomePage({ now }) {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
-          {[
-            {
-              title: "Frontend",
-              icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>,
-              skills: ["REACT", "NEXT.JS", "TYPESCRIPT", "TAILWIND", "THREE.JS", "REDUX"]
-            },
-            {
-              title: "Backend",
-              icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>,
-              skills: ["NODE.JS", "PYTHON", "POSTGRES", "MONGODB", "REDIS", "PRISMA"]
-            },
-            {
-              title: "DevOps/Tools",
-              icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>,
-              skills: ["DOCKER", "AWS", "CI/CD", "GIT", "VERCEL", "FIGMA"]
-            }
-          ].map((cat, idx) => (
+          {(technicalMastery || []).map((cat, idx) => (
             <div key={idx} className="rounded-[1.5rem] border border-white/8 bg-[#0b1120] p-6 shadow-lg">
               <div className="flex items-center gap-3 mb-6">
-                <span className="text-slate-300">{cat.icon}</span>
+                <span className="text-slate-300">{masteryIcons[cat.icon] || masteryIcons.frontend}</span>
                 <h3 className="font-heading text-lg font-bold text-white">{cat.title}</h3>
               </div>
               <div className="grid grid-cols-2 gap-3">

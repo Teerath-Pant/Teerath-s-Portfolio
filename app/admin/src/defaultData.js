@@ -81,6 +81,24 @@ export const defaultData = {
     { label: 'Node.js / Express', value: 78 },
   ],
 
+  technicalMastery: [
+    {
+      title: "Frontend",
+      icon: "frontend",
+      skills: ["REACT", "NEXT.JS", "TYPESCRIPT", "TAILWIND", "THREE.JS", "REDUX"]
+    },
+    {
+      title: "Backend",
+      icon: "backend",
+      skills: ["NODE.JS", "PYTHON", "POSTGRES", "MONGODB", "REDIS", "PRISMA"]
+    },
+    {
+      title: "DevOps/Tools",
+      icon: "devops",
+      skills: ["DOCKER", "AWS", "CI/CD", "GIT", "VERCEL", "FIGMA"]
+    }
+  ],
+
   futureEnhancements: [
     'Dark and light mode switching',
     'PWA support for installability',

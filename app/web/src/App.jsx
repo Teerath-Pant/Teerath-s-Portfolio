@@ -112,47 +112,22 @@ function AppShell() {
           <div className="flex items-center gap-3 text-[11px] text-slate-500 md:gap-4 md:text-xs">
             <span className="hidden sm:inline">{new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric' }).format(now)}</span>
             <span className="font-semibold text-slate-400">{currentTime}</span>
-            <span className="md:hidden">🔋 100%</span>
           </div>
         </header>
 
         {/* Scrollable Page Content */}
         <div className="page-scroll flex-1 overflow-y-auto px-4 py-6 md:px-8 md:py-10 lg:px-12 xl:px-16">
-          <div className="mx-auto h-full max-w-5xl">
+          <div className="mx-auto min-h-full max-w-5xl flex flex-col">
             <AnimatePresence mode="wait">
               <Routes location={location} key={location.pathname}>
-                <Route path="/" element={<Motion.div {...pageTransition} className="h-full"><HomePage now={now} /></Motion.div>} />
-                <Route path="/about" element={<Motion.div {...pageTransition} className="h-full"><AboutPage /></Motion.div>} />
-                <Route path="/projects" element={<Motion.div {...pageTransition} className="h-full"><ProjectsPage trackProjectView={trackProjectView} /></Motion.div>} />
-                <Route path="/skills" element={<Motion.div {...pageTransition} className="h-full"><SkillsPage /></Motion.div>} />
-                <Route path="/contact" element={<Motion.div {...pageTransition} className="h-full"><ContactPage trackContactClick={trackContactClick} /></Motion.div>} />
+                <Route path="/" element={<Motion.div {...pageTransition} className="flex-1"><HomePage now={now} /></Motion.div>} />
+                <Route path="/about" element={<Motion.div {...pageTransition} className="flex-1"><AboutPage /></Motion.div>} />
+                <Route path="/projects" element={<Motion.div {...pageTransition} className="flex-1"><ProjectsPage trackProjectView={trackProjectView} /></Motion.div>} />
+                <Route path="/skills" element={<Motion.div {...pageTransition} className="flex-1"><SkillsPage /></Motion.div>} />
+                <Route path="/contact" element={<Motion.div {...pageTransition} className="flex-1"><ContactPage trackContactClick={trackContactClick} /></Motion.div>} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </AnimatePresence>
-
-            {/* Feedback Redirect Button */}
-            {location.pathname !== '/contact' && (
-              <Motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5, duration: 0.4 }}
-                className="mt-16 flex justify-center pb-8"
-              >
-                <button
-                  onClick={() => {
-                    navigate('/contact');
-                    setTimeout(() => {
-                      document.getElementById('feedback-section')?.scrollIntoView({ behavior: 'smooth' });
-                    }, 300);
-                  }}
-                  className="group relative flex items-center gap-3 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-4 text-sm font-bold tracking-widest text-white uppercase shadow-[0_0_40px_rgba(79,142,247,0.3)] transition-all duration-300 hover:scale-105 hover:shadow-[0_0_60px_rgba(79,142,247,0.5)] md:text-base overflow-hidden"
-                >
-                  <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.2)_50%,transparent_75%,transparent_100%)] bg-[length:250%_250%,100%_100%] bg-[position:200%_0,0_0] bg-no-repeat transition-[background-position_0s_ease] group-hover:bg-[position:-200%_0,0_0] group-hover:duration-[1500ms]"></div>
-                  <span className="text-xl transition-transform group-hover:rotate-12">⭐</span>
-                  <span className="relative z-10">Rate This Portfolio</span>
-                </button>
-              </Motion.div>
-            )}
           </div>
         </div>
       </div>

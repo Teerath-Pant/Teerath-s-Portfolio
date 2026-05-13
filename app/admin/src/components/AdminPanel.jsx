@@ -42,19 +42,46 @@ function Toast({ toast }) {
 
 export default function AdminPanel({ onLogout }) {
   const [activeTab, setActiveTab] = useState('analytics')
-  const [data, setData] = useState(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY)
-      return stored ? JSON.parse(stored) : defaultData
-    } catch { return defaultData }
-  })
+  const [data, setData] = useState(null)
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState(null)
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
+  useEffect(() => {
+    async function initData() {
+      let sourceData = defaultData
+      try {
+        const res = await fetch('http://localhost:5001/api/load')
+        const json = await res.json()
+        if (json.ok && json.data) {
+          sourceData = json.data
+        } else {
+          const stored = localStorage.getItem(STORAGE_KEY)
+          if (stored) sourceData = JSON.parse(stored)
+        }
+      } catch (err) {
+        const stored = localStorage.getItem(STORAGE_KEY)
+        if (stored) {
+          try { sourceData = JSON.parse(stored) } catch {}
+        }
+      }
+
+      const merged = { ...defaultData }
+      for (const key of Object.keys(sourceData)) {
+        if (sourceData[key] !== undefined && sourceData[key] !== null) {
+          merged[key] = sourceData[key]
+        }
+      }
+      setData(merged)
+    }
+    initData()
+  }, [])
+
   // Persist to localStorage on every change
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+    if (data) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+    }
   }, [data])
 
   function showToast(msg, type = 'success') {
@@ -84,7 +111,7 @@ export default function AdminPanel({ onLogout }) {
     const key = activeTab === 'profile' ? 'profile'
       : activeTab === 'about' ? ['bioPoints', 'audience', 'goals']
         : activeTab === 'projects' ? 'projectCards'
-          : activeTab === 'skills' ? ['skillLevels', 'futureEnhancements']
+          : activeTab === 'skills' ? ['skillLevels', 'futureEnhancements', 'technicalMastery']
             : 'socials'
     if (!window.confirm('Reset this section to defaults?')) return
     if (Array.isArray(key)) {
@@ -98,6 +125,14 @@ export default function AdminPanel({ onLogout }) {
   }
 
   const tabProps = { data, setData }
+
+  if (!data) {
+    return (
+      <div className="admin-bg" style={{ display: 'flex', height: '100dvh', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ color: 'var(--primary)', fontWeight: 600 }}>Loading admin data...</div>
+      </div>
+    )
+  }
 
   return (
     <div className="admin-bg" style={{ display: 'flex', height: '100dvh', overflow: 'hidden' }}>
