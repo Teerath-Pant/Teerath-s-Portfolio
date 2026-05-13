@@ -46,6 +46,54 @@ function ProjectCard({ project, index, onChange, onRemove }) {
             <input type="text" className="field" value={project.link} onChange={e => onChange({ ...project, link: e.target.value })} placeholder="https://github.com/..." />
           </div>
           <div>
+            <label className="label">Project Images</label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.5rem' }}>
+              {(project.images || []).map((imgUrl, imgIdx) => (
+                <div key={imgIdx} style={{ position: 'relative', width: '60px', height: '60px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border)' }}>
+                  <img src={imgUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <button 
+                    onClick={() => {
+                      const newImgs = [...project.images]
+                      newImgs.splice(imgIdx, 1)
+                      onChange({ ...project, images: newImgs })
+                    }}
+                    style={{ position: 'absolute', top: 2, right: 2, background: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '50%', width: '18px', height: '18px', fontSize: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  >✕</button>
+                </div>
+              ))}
+            </div>
+            <input 
+              type="file" 
+              multiple 
+              accept="image/*" 
+              className="field" 
+              style={{ padding: '0.4rem', fontSize: '0.75rem' }}
+              onChange={async e => {
+                const files = Array.from(e.target.files)
+                if (!files.length) return
+                
+                const newImages = [...(project.images || [])]
+                for (const file of files) {
+                  const reader = new FileReader()
+                  const dataUrl = await new Promise(res => {
+                    reader.onload = () => res(reader.result)
+                    reader.readAsDataURL(file)
+                  })
+                  
+                  const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ filename: file.name, data: dataUrl })
+                  })
+                  const result = await response.json()
+                  if (result.ok) newImages.push(result.url)
+                }
+                onChange({ ...project, images: newImages })
+                e.target.value = ''
+              }} 
+            />
+          </div>
+          <div>
             <label className="label">Tag</label>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginTop: '0.2rem' }}>
               {TAG_OPTIONS.map(tag => (

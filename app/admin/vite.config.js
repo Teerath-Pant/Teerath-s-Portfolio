@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import { writeFileSync } from 'fs'
+import { writeFileSync, existsSync, mkdirSync } from 'fs'
 import { resolve } from 'path'
 import { createHash } from 'crypto'
 import mysql from 'mysql2/promise'
@@ -315,6 +315,38 @@ function portfolioWriterPlugin() {
       })
 
       // ─────────────────────────────────────────────────────────
+      // PORTFOLIO IMAGE UPLOAD: POST /api/upload
+      // ─────────────────────────────────────────────────────────
+      server.middlewares.use('/api/upload', async (req, res) => {
+        setCors(res)
+        if (req.method === 'OPTIONS') return res.end()
+        if (req.method !== 'POST') {
+          res.statusCode = 405
+          return res.end('Method Not Allowed')
+        }
+
+        try {
+          const body = await parseBody(req)
+          if (!body.data || !body.filename) throw new Error('Missing data or filename')
+          
+          const base64Data = body.data.replace(/^data:image\/\w+;base64,/, "")
+          const buffer = Buffer.from(base64Data, 'base64')
+          
+          const uploadDir = resolve(__dirname, '../web/public/uploads')
+          if (!existsSync(uploadDir)) mkdirSync(uploadDir, { recursive: true })
+          
+          const uniqueFilename = Date.now() + '-' + body.filename.replace(/[^a-zA-Z0-9.-]/g, '_')
+          const filePath = resolve(uploadDir, uniqueFilename)
+          writeFileSync(filePath, buffer)
+          
+          res.end(JSON.stringify({ ok: true, url: '/uploads/' + uniqueFilename }))
+        } catch (err) {
+          res.statusCode = 500
+          res.end(JSON.stringify({ ok: false, error: String(err) }))
+        }
+      })
+
+      // ─────────────────────────────────────────────────────────
       // PORTFOLIO SAVE: POST /api/save
       // ─────────────────────────────────────────────────────────
       server.middlewares.use('/api/save', async (req, res) => {
@@ -351,8 +383,13 @@ function portfolioWriterPlugin() {
             }
 
             await conn.execute('TRUNCATE TABLE portfolio_projects')
+            await conn.execute('TRUNCATE TABLE projects') // Keep old projects table in sync as requested
             if (body.projectCards) {
-              for (const p of body.projectCards) await conn.execute('INSERT INTO portfolio_projects (title, description, tag, link) VALUES (?, ?, ?, ?)', [p.title, p.description, p.tag, p.link])
+              for (const p of body.projectCards) {
+                const imagesStr = JSON.stringify(p.images || [])
+                await conn.execute('INSERT INTO portfolio_projects (title, description, tag, link, images) VALUES (?, ?, ?, ?, ?)', [p.title, p.description, p.tag, p.link, imagesStr])
+                await conn.execute('INSERT INTO projects (title, description, link) VALUES (?, ?, ?)', [p.title, p.description, p.link])
+              }
             }
 
             await conn.execute('TRUNCATE TABLE portfolio_skill_levels')
@@ -414,7 +451,7 @@ function portfolioWriterPlugin() {
           const [goalsRows] = await pool.execute('SELECT text FROM portfolio_goals')
           const [audienceRows] = await pool.execute('SELECT text FROM portfolio_audience')
           const [bioPointsRows] = await pool.execute('SELECT icon, label, value FROM portfolio_bio_points')
-          const [projectCardsRows] = await pool.execute('SELECT title, description, tag, link FROM portfolio_projects')
+          const [projectCardsRows] = await pool.execute('SELECT title, description, tag, link, images FROM portfolio_projects')
           const [skillLevelsRows] = await pool.execute('SELECT label, value FROM portfolio_skill_levels')
           const [techMasteryRows] = await pool.execute('SELECT title, icon, skills FROM portfolio_technical_mastery')
           const [feRows] = await pool.execute('SELECT text FROM portfolio_future_enhancements')
@@ -426,7 +463,7 @@ function portfolioWriterPlugin() {
             goals: goalsRows.map(r => r.text),
             audience: audienceRows.map(r => r.text),
             bioPoints: bioPointsRows,
-            projectCards: projectCardsRows,
+            projectCards: projectCardsRows.map(r => ({ ...r, images: r.images ? JSON.parse(r.images) : [] })),
             skillLevels: skillLevelsRows,
             technicalMastery: techMasteryRows.map(r => ({ ...r, skills: r.skills ? JSON.parse(r.skills) : [] })),
             futureEnhancements: feRows.map(r => r.text),

@@ -4,7 +4,9 @@ import profileImage from '../assets/images/profile.png'
 import nexusImg from '../assets/images/nexus.png'
 import syncImg from '../assets/images/sync.png'
 import auraImg from '../assets/images/aura.png'
-import { profile, stats, socials, technicalMastery } from '../data/portfolioData'
+import { profile, stats, socials, technicalMastery, projectCards } from '../data/portfolioData'
+
+const projectImages = [nexusImg, syncImg, auraImg]
 
 // ── Animation helpers ──────────────────────────────────────────────
 const fadeUp = (delay = 0) => ({
@@ -235,46 +237,34 @@ export default function HomePage({ now }) {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[
-            {
-              title: "NexusCloud",
-              desc: "Enterprise-level cloud orchestration platform featuring real-time monitoring and automated deployment pipelines.",
-              tags: ["REACT", "KUBERNETES", "AWS"],
-              img: nexusImg,
-            },
-            {
-              title: "SyncAPI",
-              desc: "High-throughput data synchronization engine built for seamless integration between legacy systems and modern web apps.",
-              tags: ["NODE.JS", "GRAPHQL", "REDIS"],
-              img: syncImg,
-            },
-            {
-              title: "Aura UI",
-              desc: "An open-source design system and component library focused on accessibility and high-end developer experience.",
-              tags: ["TYPESCRIPT", "TAILWIND", "FRAMER"],
-              img: auraImg,
-            }
-          ].map((proj, idx) => (
+          {(projectCards || []).slice(0, 3).map((proj, idx) => (
             <Motion.div 
               key={idx}
               whileHover={{ y: -5 }}
               className="flex flex-col overflow-hidden rounded-[1.5rem] border border-white/8 bg-[#0b1120] shadow-lg transition-colors hover:bg-white/[0.04]"
             >
-              <div className="h-48 w-full bg-cover bg-center border-b border-white/8" style={{ backgroundImage: `url(${proj.img})` }} />
+              <div className="h-48 w-full bg-cover bg-center border-b border-white/8" style={{ backgroundImage: `url(${(proj.images && proj.images[0]) || projectImages[idx % projectImages.length]})` }} />
+              {proj.images && proj.images.length > 1 && (
+                <div className="flex gap-2 overflow-x-auto px-5 py-3 bg-[#060a13] border-b border-white/5 snap-x" style={{ scrollbarWidth: 'none' }}>
+                  {proj.images.slice(1).map((imgUrl, imgIdx) => (
+                    <div key={imgIdx} className="h-12 w-16 shrink-0 rounded bg-cover bg-center border border-white/10 snap-start hover:border-white/30 transition-colors" style={{ backgroundImage: `url(${imgUrl})` }} />
+                  ))}
+                </div>
+              )}
               <div className="p-6 flex flex-col flex-1">
                 <div className="flex items-center justify-between">
                   <h3 className="font-heading text-lg font-bold text-white">{proj.title}</h3>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
                 </div>
-                <p className="mt-3 text-sm text-slate-400 leading-relaxed flex-1">{proj.desc}</p>
+                <p className="mt-3 text-sm text-slate-400 leading-relaxed flex-1">{proj.description}</p>
                 <div className="mt-5 flex flex-wrap gap-2">
-                  {proj.tags.map(tag => (
-                    <span key={tag} className="rounded bg-white/5 px-2 py-1 text-[10px] font-semibold text-slate-300 tracking-wider">{tag}</span>
-                  ))}
+                  {proj.tag && (
+                    <span className="rounded bg-white/5 px-2 py-1 text-[10px] font-semibold text-slate-300 tracking-wider uppercase">{proj.tag}</span>
+                  )}
                 </div>
                 <div className="mt-6 flex items-center gap-4 text-xs font-semibold text-white">
-                  <a href="#" className="hover:text-blue-400 transition-colors">View Project</a>
-                  <a href="#" className="hover:text-blue-400 transition-colors">GitHub</a>
+                  <a href={proj.link || "#"} className="hover:text-blue-400 transition-colors">View Project</a>
+                  <a href={proj.link || "#"} className="hover:text-blue-400 transition-colors">GitHub</a>
                 </div>
               </div>
             </Motion.div>

@@ -96,6 +96,7 @@ export const portfolioProjects = mysqlTable('portfolio_projects', {
   description: text('description'),
   tag: varchar('tag', { length: 128 }),
   link: varchar('link', { length: 1024 }),
+  images: text('images'), // JSON array of image URLs
 });
 
 export const portfolioSkillLevels = mysqlTable('portfolio_skill_levels', {
