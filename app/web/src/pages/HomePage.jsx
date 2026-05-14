@@ -263,8 +263,7 @@ export default function HomePage({ now }) {
                   )}
                 </div>
                 <div className="mt-6 flex items-center gap-4 text-xs font-semibold text-white">
-                  <a href={proj.link || "#"} className="hover:text-blue-400 transition-colors">View Project</a>
-                  <a href={proj.link || "#"} className="hover:text-blue-400 transition-colors">GitHub</a>
+                  <a href={proj.link && proj.link !== '#' ? (proj.link.match(/^https?:\/\//i) ? proj.link : `https://${proj.link}`) : "#"} target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors">View Project</a>
                 </div>
               </div>
             </Motion.div>
