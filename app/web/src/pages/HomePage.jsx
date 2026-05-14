@@ -321,10 +321,10 @@ export default function HomePage({ now }) {
 
       {/* Footer */}
       <footer className="mt-4 border-t border-white/10 pt-8 pb-4 flex flex-col md:flex-row items-center justify-between gap-4 text-[10px] font-medium text-slate-500 uppercase tracking-wide">
-        <p>Dev.Core | &copy; 2024 Developer Portfolio... </p>
+        <p>Dev.Core | &copy; 2026 Developer Portfolio... </p>
         <div className="flex gap-6">
-          <a href="#" className="hover:text-slate-300 transition-colors">GitHub</a>
-          <a href="#" className="hover:text-slate-300 transition-colors">LinkedIn</a>
+          <a href="https://github.com/Teerath-Pant" className="hover:text-slate-300 transition-colors">GitHub</a>
+          <a href="https://www.linkedin.com/in/teerath-pant-49461033b/" className="hover:text-slate-300 transition-colors">LinkedIn</a>
           <a href="#" className="hover:text-slate-300 transition-colors">Source Code</a>
         </div>
       </footer>
