@@ -1,11 +1,11 @@
 import fs from 'fs';
 import path from 'path';
-import mysql from 'mysql2/promise';
+import postgres from 'postgres';
 import * as dotenv from 'dotenv';
 dotenv.config();
 
 async function run() {
-  const connection = await mysql.createConnection(process.env.DATABASE_URL);
+  const sql = postgres(process.env.DATABASE_URL!);
   
   console.log('Migrating Analytics Data...');
   try {
@@ -16,10 +16,10 @@ async function run() {
       // Migrate visits
       if (data.visits && data.visits.length > 0) {
         for (const v of data.visits) {
-          await connection.execute(
-            'INSERT INTO visits (date, hashed_ip, session, country, page) VALUES (?, ?, ?, ?, ?)',
-            [v.date, v.hashedIp, v.session, v.country || 'XX', v.page || '/']
-          );
+          await sql`
+            INSERT INTO visits (date, hashed_ip, session, country, page)
+            VALUES (${v.date}, ${v.hashedIp}, ${v.session}, ${v.country || 'XX'}, ${v.page || '/'})
+          `;
         }
         console.log(`Migrated ${data.visits.length} visits.`);
       }
@@ -27,20 +27,21 @@ async function run() {
       // Migrate events
       if (data.events && data.events.length > 0) {
         for (const e of data.events) {
-          await connection.execute(
-            'INSERT INTO events (type, project, platform, session, date) VALUES (?, ?, ?, ?, ?)',
-            [e.type, e.project || null, e.platform || null, e.session, e.date]
-          );
+          await sql`
+            INSERT INTO events (type, project, platform, session, date)
+            VALUES (${e.type}, ${e.project || null}, ${e.platform || null}, ${e.session}, ${e.date})
+          `;
         }
         console.log(`Migrated ${data.events.length} events.`);
       }
 
       // Migrate ignoredIpHash
       if (data.ignoredIpHash) {
-        await connection.execute(
-          'INSERT INTO settings (`key`, value) VALUES (?, ?) ON DUPLICATE KEY UPDATE value = ?',
-          ['ignoredIpHash', data.ignoredIpHash, data.ignoredIpHash]
-        );
+        await sql`
+          INSERT INTO settings (key, value)
+          VALUES (${'ignoredIpHash'}, ${data.ignoredIpHash})
+          ON CONFLICT (key) DO UPDATE SET value = ${data.ignoredIpHash}
+        `;
         console.log('Migrated ignoredIpHash setting.');
       }
     }
@@ -56,10 +57,10 @@ async function run() {
       
       if (data.feedback && data.feedback.length > 0) {
         for (const f of data.feedback) {
-          await connection.execute(
-            'INSERT INTO feedback (rating, comment, name, date) VALUES (?, ?, ?, ?)',
-            [f.rating, f.comment || '', f.name || 'Anonymous', f.date]
-          );
+          await sql`
+            INSERT INTO feedback (rating, comment, name, date)
+            VALUES (${f.rating}, ${f.comment || ''}, ${f.name || 'Anonymous'}, ${f.date})
+          `;
         }
         console.log(`Migrated ${data.feedback.length} feedback entries.`);
       }
@@ -69,7 +70,7 @@ async function run() {
   }
 
   console.log('Migration complete!');
-  await connection.end();
+  await sql.end();
 }
 
 run().catch(console.error);

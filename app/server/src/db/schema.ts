@@ -1,28 +1,28 @@
-import { mysqlTable, int, varchar, text, timestamp, boolean } from 'drizzle-orm/mysql-core';
+import { pgTable, serial, varchar, text, timestamp, boolean, integer } from 'drizzle-orm/pg-core';
 
 // Example Schema: Projects Table
-export const projects = mysqlTable('projects', {
-  id: int('id').primaryKey().autoincrement(),
+export const projects = pgTable('projects', {
+  id: serial('id').primaryKey(),
   title: varchar('title', { length: 256 }).notNull(),
   description: text('description'),
   imageUrl: varchar('image_url', { length: 1024 }),
   link: varchar('link', { length: 1024 }),
   createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow().onUpdateNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
 });
 
 // Admins Table
-export const admins = mysqlTable('admins', {
-  id: int('id').primaryKey().autoincrement(),
+export const admins = pgTable('admins', {
+  id: serial('id').primaryKey(),
   username: varchar('username', { length: 256 }).notNull().unique(),
   password: varchar('password', { length: 256 }).notNull(), // Should be hashed in production
   createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow().onUpdateNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
 });
 
 // Analytics: Visits Table
-export const visits = mysqlTable('visits', {
-  id: int('id').primaryKey().autoincrement(),
+export const visits = pgTable('visits', {
+  id: serial('id').primaryKey(),
   date: varchar('date', { length: 10 }).notNull(), // YYYY-MM-DD
   hashedIp: varchar('hashed_ip', { length: 64 }).notNull(),
   session: varchar('session', { length: 64 }).notNull(),
@@ -32,8 +32,8 @@ export const visits = mysqlTable('visits', {
 });
 
 // Analytics: Events Table
-export const events = mysqlTable('events', {
-  id: int('id').primaryKey().autoincrement(),
+export const events = pgTable('events', {
+  id: serial('id').primaryKey(),
   type: varchar('type', { length: 64 }).notNull(), // 'project_view', 'contact_click'
   project: varchar('project', { length: 256 }),
   platform: varchar('platform', { length: 64 }),
@@ -43,9 +43,9 @@ export const events = mysqlTable('events', {
 });
 
 // Feedback Table
-export const feedback = mysqlTable('feedback', {
-  id: int('id').primaryKey().autoincrement(),
-  rating: int('rating').notNull(),
+export const feedback = pgTable('feedback', {
+  id: serial('id').primaryKey(),
+  rating: integer('rating').notNull(),
   comment: text('comment'),
   name: varchar('name', { length: 256 }),
   date: varchar('date', { length: 64 }).notNull(), // ISO string
@@ -53,18 +53,18 @@ export const feedback = mysqlTable('feedback', {
 });
 
 // Settings Table (for simple key-value config like ignoredIpHash)
-export const settings = mysqlTable('settings', {
+export const settings = pgTable('settings', {
   key: varchar('key', { length: 64 }).primaryKey(),
   value: text('value'),
-  updatedAt: timestamp('updated_at').defaultNow().onUpdateNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
 });
 
 // ─────────────────────────────────────────────────────────
 // PORTFOLIO TABLES (Tabular Storage)
 // ─────────────────────────────────────────────────────────
 
-export const portfolioProfile = mysqlTable('portfolio_profile', {
-  id: int('id').primaryKey().autoincrement(),
+export const portfolioProfile = pgTable('portfolio_profile', {
+  id: serial('id').primaryKey(),
   name: varchar('name', { length: 256 }),
   title: varchar('title', { length: 256 }),
   location: varchar('location', { length: 256 }),
@@ -73,25 +73,25 @@ export const portfolioProfile = mysqlTable('portfolio_profile', {
   availableForWork: boolean('available_for_work').default(true),
 });
 
-export const portfolioGoals = mysqlTable('portfolio_goals', {
-  id: int('id').primaryKey().autoincrement(),
+export const portfolioGoals = pgTable('portfolio_goals', {
+  id: serial('id').primaryKey(),
   text: varchar('text', { length: 1024 }).notNull(),
 });
 
-export const portfolioAudience = mysqlTable('portfolio_audience', {
-  id: int('id').primaryKey().autoincrement(),
+export const portfolioAudience = pgTable('portfolio_audience', {
+  id: serial('id').primaryKey(),
   text: varchar('text', { length: 1024 }).notNull(),
 });
 
-export const portfolioBioPoints = mysqlTable('portfolio_bio_points', {
-  id: int('id').primaryKey().autoincrement(),
+export const portfolioBioPoints = pgTable('portfolio_bio_points', {
+  id: serial('id').primaryKey(),
   icon: varchar('icon', { length: 32 }),
   label: varchar('label', { length: 128 }),
   value: varchar('value', { length: 256 }),
 });
 
-export const portfolioProjects = mysqlTable('portfolio_projects', {
-  id: int('id').primaryKey().autoincrement(),
+export const portfolioProjects = pgTable('portfolio_projects', {
+  id: serial('id').primaryKey(),
   title: varchar('title', { length: 256 }).notNull(),
   description: text('description'),
   tag: varchar('tag', { length: 128 }),
@@ -99,33 +99,33 @@ export const portfolioProjects = mysqlTable('portfolio_projects', {
   images: text('images'), // JSON array of image URLs
 });
 
-export const portfolioSkillLevels = mysqlTable('portfolio_skill_levels', {
-  id: int('id').primaryKey().autoincrement(),
+export const portfolioSkillLevels = pgTable('portfolio_skill_levels', {
+  id: serial('id').primaryKey(),
   label: varchar('label', { length: 128 }).notNull(),
-  value: int('value').default(0),
+  value: integer('value').default(0),
 });
 
-export const portfolioTechnicalMastery = mysqlTable('portfolio_technical_mastery', {
-  id: int('id').primaryKey().autoincrement(),
+export const portfolioTechnicalMastery = pgTable('portfolio_technical_mastery', {
+  id: serial('id').primaryKey(),
   title: varchar('title', { length: 256 }).notNull(),
   icon: varchar('icon', { length: 64 }),
   skills: text('skills'), // JSON string array of skills
 });
 
-export const portfolioFutureEnhancements = mysqlTable('portfolio_future_enhancements', {
-  id: int('id').primaryKey().autoincrement(),
+export const portfolioFutureEnhancements = pgTable('portfolio_future_enhancements', {
+  id: serial('id').primaryKey(),
   text: varchar('text', { length: 1024 }).notNull(),
 });
 
-export const portfolioSocials = mysqlTable('portfolio_socials', {
-  id: int('id').primaryKey().autoincrement(),
+export const portfolioSocials = pgTable('portfolio_socials', {
+  id: serial('id').primaryKey(),
   label: varchar('label', { length: 128 }),
   href: varchar('href', { length: 1024 }),
   platform: varchar('platform', { length: 64 }),
 });
 
-export const portfolioStats = mysqlTable('portfolio_stats', {
-  id: int('id').primaryKey().autoincrement(),
+export const portfolioStats = pgTable('portfolio_stats', {
+  id: serial('id').primaryKey(),
   value: varchar('value', { length: 64 }),
   label: varchar('label', { length: 256 }),
 });

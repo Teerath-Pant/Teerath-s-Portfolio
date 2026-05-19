@@ -1,15 +1,15 @@
-import mysql from 'mysql2/promise';
+import postgres from 'postgres';
 import * as dotenv from 'dotenv';
 dotenv.config();
 
 async function run() {
-  const connection = await mysql.createConnection(process.env.DATABASE_URL);
+  const sql = postgres(process.env.DATABASE_URL!);
   
   console.log('Creating tables...');
   
-  await connection.query(`
+  await sql`
     CREATE TABLE IF NOT EXISTS visits (
-      id INT AUTO_INCREMENT PRIMARY KEY,
+      id SERIAL PRIMARY KEY,
       date VARCHAR(10) NOT NULL,
       hashed_ip VARCHAR(64) NOT NULL,
       session VARCHAR(64) NOT NULL,
@@ -17,11 +17,11 @@ async function run() {
       page VARCHAR(256) NOT NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
-  `);
+  `;
 
-  await connection.query(`
+  await sql`
     CREATE TABLE IF NOT EXISTS events (
-      id INT AUTO_INCREMENT PRIMARY KEY,
+      id SERIAL PRIMARY KEY,
       type VARCHAR(64) NOT NULL,
       project VARCHAR(256),
       platform VARCHAR(64),
@@ -29,29 +29,29 @@ async function run() {
       date VARCHAR(10) NOT NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
-  `);
+  `;
 
-  await connection.query(`
+  await sql`
     CREATE TABLE IF NOT EXISTS feedback (
-      id INT AUTO_INCREMENT PRIMARY KEY,
+      id SERIAL PRIMARY KEY,
       rating INT NOT NULL,
       comment TEXT,
       name VARCHAR(256),
       date VARCHAR(64) NOT NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
-  `);
+  `;
 
-  await connection.query(`
+  await sql`
     CREATE TABLE IF NOT EXISTS settings (
-      \`key\` VARCHAR(64) PRIMARY KEY,
+      key VARCHAR(64) PRIMARY KEY,
       value TEXT,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
-  `);
+  `;
 
   console.log('Tables created successfully!');
-  await connection.end();
+  await sql.end();
 }
 
 run().catch(console.error);
