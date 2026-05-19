@@ -1,8 +1,18 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion as Motion, AnimatePresence } from 'framer-motion'
 
-// Relative path — Vite proxies /api/* to your Express backend automatically
-const API = '/api/analytics'
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5002'
+const API = `${API_BASE}/api/analytics`
+const EMPTY_ANALYTICS = {
+  selfFiltered: false,
+  totalVisits: 0,
+  uniqueVisitors: 0,
+  topCountries: [],
+  pageViews: [],
+  projectsViewed: [],
+  contactClicks: [],
+  dailyChart: [],
+}
 
 // ── Theme color tokens ──
 const C = {
@@ -191,40 +201,57 @@ function SelfFilterToggle({ selfFiltered, onToggle, loading }) {
 // ── Main dashboard ──
 export default function AnalyticsDashboard() {
   const [range, setRange] = useState('7d')
-  const [stats, setStats] = useState(null)
+  const [stats, setStats] = useState(EMPTY_ANALYTICS)
   const [loading, setLoading] = useState(true)
   const [selfFiltered, setSelfFiltered] = useState(false)
   const [filterLoading, setFilterLoading] = useState(false)
   const [error, setError] = useState(null)
   const [lastRefresh, setLastRefresh] = useState(null)
+  const latestRequestRef = useRef(0)
 
-  const fetchStats = useCallback(async () => {
+  const fetchStats = useCallback(async ({ signal } = {}) => {
+    const requestId = ++latestRequestRef.current
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(`${API}?range=${range}`)
+      const res = await fetch(`${API}?${new URLSearchParams({ range })}`, {
+        signal,
+        cache: 'no-store',
+      })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const json = await res.json()
+      if (signal?.aborted || requestId !== latestRequestRef.current) return
       if (json.ok) {
-        setStats(json.data)
-        setSelfFiltered(json.data.selfFiltered)
+        const nextStats = { ...EMPTY_ANALYTICS, ...(json.data || {}) }
+        setStats(nextStats)
+        setSelfFiltered(nextStats.selfFiltered)
         setLastRefresh(new Date())
       } else {
+        setStats(current => current || EMPTY_ANALYTICS)
         setError(json.error || 'Server returned an error.')
       }
     } catch (err) {
+      if (err.name === 'AbortError') return
+      if (requestId !== latestRequestRef.current) return
+      setStats(current => current || EMPTY_ANALYTICS)
       setError(`API request failed: ${err.message}`)
     } finally {
-      setLoading(false)
+      if (!signal?.aborted && requestId === latestRequestRef.current) {
+        setLoading(false)
+      }
     }
   }, [range])
 
-  useEffect(() => { fetchStats() }, [fetchStats])
+  useEffect(() => {
+    const controller = new AbortController()
+    fetchStats({ signal: controller.signal })
+    return () => controller.abort()
+  }, [fetchStats])
 
   async function toggleSelfFilter() {
     setFilterLoading(true)
     try {
-      const res = await fetch('/api/analytics/ignore-self', {
+      const res = await fetch(`${API}/ignore-self`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: selfFiltered ? 'allow' : 'ignore' }),
@@ -234,19 +261,8 @@ export default function AnalyticsDashboard() {
     } catch { /* silent */ } finally { setFilterLoading(false) }
   }
 
-  // ── Error state (no data at all) ──
-  if (error && !stats) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px', gap: '1rem', textAlign: 'center', padding: '2rem' }}>
-        <span style={{ fontSize: '2.5rem' }}>⚠️</span>
-        <p style={{ fontSize: '0.85rem', maxWidth: '380px', lineHeight: 1.6, color: C.textSub }}>{error}</p>
-        <button onClick={fetchStats} className="btn btn-ghost" style={{ fontSize: '0.78rem' }}>↻ Try Again</button>
-      </div>
-    )
-  }
-
   // ── Loading state ──
-  if (loading && !stats) {
+  if (loading && stats === EMPTY_ANALYTICS && !error) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '300px', gap: '0.75rem', color: C.muted }}>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'spin 1s linear infinite' }}>
@@ -257,7 +273,7 @@ export default function AnalyticsDashboard() {
     )
   }
 
-  const s = stats || {}
+  const s = stats
   const maxCountry = Math.max(...(s.topCountries || []).map(c => c.count), 1)
   const maxProject = Math.max(...(s.projectsViewed || []).map(p => p.count), 1)
   const maxContact = Math.max(...(s.contactClicks || []).map(c => c.count), 1)
@@ -300,7 +316,7 @@ export default function AnalyticsDashboard() {
           <button
             onClick={async () => {
               if (confirm('Delete all analytics data? This cannot be undone.')) {
-                await fetch('/api/analytics', { method: 'DELETE' })
+                await fetch(API, { method: 'DELETE' })
                 fetchStats()
               }
             }}

@@ -51,7 +51,7 @@ export default function AdminPanel({ onLogout }) {
     async function initData() {
       let sourceData = defaultData
       try {
-        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001'
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002'
         const res = await fetch(`${API_URL}/api/load`)
         const json = await res.json()
         if (json.ok && json.data) {
@@ -93,7 +93,7 @@ export default function AdminPanel({ onLogout }) {
   async function saveToPortfolio() {
     setSaving(true)
     try {
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001'
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002'
       const res = await fetch(`${API_URL}/api/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

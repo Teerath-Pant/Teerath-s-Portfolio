@@ -9,7 +9,7 @@ import * as schema from './db/schema'
 config()
 
 const app = express()
-const PORT = process.env.PORT || 5001
+const PORT = process.env.PORT || 5002
 
 // ── Middleware ──
 app.use(cors({
@@ -275,16 +275,120 @@ app.post('/api/track', async (req, res) => {
 })
 
 // GET /api/analytics — for admin panel
-app.get('/api/analytics', async (_req, res) => {
+app.get('/api/analytics', async (req, res) => {
   try {
-    const [visitRows, eventRows] = await Promise.all([
-      db.select().from(schema.visits).orderBy(schema.visits.createdAt),
-      db.select().from(schema.events).orderBy(schema.events.createdAt),
+    const range = (req.query.range as string) || '7d'
+    const cutoff = new Date()
+    if (range === 'today') cutoff.setDate(cutoff.getDate() - 1)
+    else if (range === '7d') cutoff.setDate(cutoff.getDate() - 7)
+    else cutoff.setFullYear(2000)
+
+    const [visitRows, eventRows, settingsRows] = await Promise.all([
+      db.select().from(schema.visits),
+      db.select().from(schema.events),
+      db.select().from(schema.settings).where(eq(schema.settings.key, 'ignoredIpHash'))
     ])
-    res.json({ ok: true, visits: visitRows, events: eventRows })
+
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown'
+    const myHashedIp = Buffer.from(ip.toString()).toString('base64').slice(0, 64)
+
+    const ignoredHashes = settingsRows.map((r: any) => r.value)
+    const selfFiltered = ignoredHashes.includes(myHashedIp)
+
+    let validVisits = visitRows.filter((v: any) => new Date(v.date) >= cutoff)
+    let validEvents = eventRows.filter((e: any) => new Date(e.date) >= cutoff)
+
+    if (selfFiltered) {
+      validVisits = validVisits.filter((v: any) => !ignoredHashes.includes(v.hashedIp))
+      const validSessions = new Set(validVisits.map((v: any) => v.session))
+      validEvents = validEvents.filter((e: any) => validSessions.has(e.session))
+    }
+
+    const totalVisits = validVisits.length
+    const uniqueVisitors = new Set(validVisits.map((v: any) => v.hashedIp)).size
+    
+    const countryCounts: Record<string, number> = {}
+    const pageCounts: Record<string, number> = {}
+    validVisits.forEach((v: any) => {
+      const c = v.country || 'XX'
+      countryCounts[c] = (countryCounts[c] || 0) + 1
+      pageCounts[v.page] = (pageCounts[v.page] || 0) + 1
+    })
+
+    const topCountries = Object.entries(countryCounts).map(([country, count]) => ({ country, count })).sort((a,b) => b.count - a.count)
+    const pageViews = Object.entries(pageCounts).map(([page, count]) => ({ page, count })).sort((a,b) => b.count - a.count)
+
+    const projectCounts: Record<string, number> = {}
+    const contactCounts: Record<string, number> = {}
+    validEvents.forEach((e: any) => {
+      if (e.type === 'project_view' && e.project) {
+        projectCounts[e.project] = (projectCounts[e.project] || 0) + 1
+      } else if (e.type === 'contact_click' && e.platform) {
+        contactCounts[e.platform] = (contactCounts[e.platform] || 0) + 1
+      }
+    })
+
+    const projectsViewed = Object.entries(projectCounts).map(([project, count]) => ({ project, count })).sort((a,b) => b.count - a.count)
+    const contactClicks = Object.entries(contactCounts).map(([platform, count]) => ({ platform, count })).sort((a,b) => b.count - a.count)
+
+    const dailyCounts: Record<string, number> = {}
+    validVisits.forEach((v: any) => {
+      dailyCounts[v.date] = (dailyCounts[v.date] || 0) + 1
+    })
+    const dailyChart = Object.entries(dailyCounts).map(([date, count]) => ({ date, count })).sort((a,b) => a.date.localeCompare(b.date))
+
+    res.json({
+      ok: true,
+      data: {
+        selfFiltered,
+        totalVisits,
+        uniqueVisitors,
+        topCountries,
+        pageViews,
+        projectsViewed,
+        contactClicks,
+        dailyChart
+      }
+    })
   } catch (err) {
     console.error('Analytics error:', err)
     res.status(500).json({ ok: false, error: 'Failed to fetch analytics' })
+  }
+})
+
+// POST /api/analytics/ignore-self
+app.post('/api/analytics/ignore-self', async (req, res) => {
+  try {
+    const { action } = req.body
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown'
+    const myHashedIp = Buffer.from(ip.toString()).toString('base64').slice(0, 64)
+
+    if (action === 'ignore') {
+      const existing = await db.select().from(schema.settings).where(eq(schema.settings.key, 'ignoredIpHash'))
+      if (existing.length > 0) {
+        await db.update(schema.settings).set({ value: myHashedIp }).where(eq(schema.settings.key, 'ignoredIpHash'))
+      } else {
+        await db.insert(schema.settings).values({ key: 'ignoredIpHash', value: myHashedIp })
+      }
+    } else {
+      await db.delete(schema.settings).where(eq(schema.settings.key, 'ignoredIpHash'))
+    }
+    res.json({ ok: true })
+  } catch (err) {
+    console.error('Ignore self error:', err)
+    res.status(500).json({ ok: false, error: 'Failed to update ignore status' })
+  }
+})
+
+// DELETE /api/analytics
+app.delete('/api/analytics', async (_req, res) => {
+  try {
+    await db.delete(schema.visits)
+    await db.delete(schema.events)
+    res.json({ ok: true })
+  } catch (err) {
+    console.error('Delete analytics error:', err)
+    res.status(500).json({ ok: false, error: 'Failed to delete analytics' })
   }
 })
 
@@ -294,3 +398,4 @@ app.get('/api/analytics', async (_req, res) => {
 app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`)
 })
+

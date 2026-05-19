@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useRef } from 'react'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002'
 const ANALYTICS_URL = `${API_URL}/api/track`
 const SESSION_KEY = 'portfolio_session_id'
 
