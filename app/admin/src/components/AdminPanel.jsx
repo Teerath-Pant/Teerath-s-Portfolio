@@ -51,7 +51,8 @@ export default function AdminPanel({ onLogout }) {
     async function initData() {
       let sourceData = defaultData
       try {
-        const res = await fetch('http://localhost:5001/api/load')
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001'
+        const res = await fetch(`${API_URL}/api/load`)
         const json = await res.json()
         if (json.ok && json.data) {
           sourceData = json.data
@@ -92,7 +93,8 @@ export default function AdminPanel({ onLogout }) {
   async function saveToPortfolio() {
     setSaving(true)
     try {
-      const res = await fetch('/api/save', {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001'
+      const res = await fetch(`${API_URL}/api/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -232,7 +234,7 @@ export default function AdminPanel({ onLogout }) {
             </p>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            <a href="http://localhost:5000" target="_blank" rel="noopener noreferrer"
+            <a href={import.meta.env.VITE_WEB_URL || "http://localhost:5000"} target="_blank" rel="noopener noreferrer"
               className="btn btn-ghost" style={{ fontSize: '0.75rem' }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />

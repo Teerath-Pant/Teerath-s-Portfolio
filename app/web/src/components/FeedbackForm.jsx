@@ -18,7 +18,8 @@ export default function FeedbackForm() {
 
     setStatus('submitting')
     try {
-      const res = await fetch('http://localhost:5001/api/feedback', {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001'
+      const res = await fetch(`${API_URL}/api/feedback`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ rating, comment, name }),
