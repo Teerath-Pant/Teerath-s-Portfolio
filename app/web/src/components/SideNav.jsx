@@ -106,8 +106,15 @@ export default function SideNav({ portfolioData, isDrawer = false, onClose, onNa
   const asideClass = isDrawer
     ? 'relative flex h-screen w-[280px] max-w-[82vw] shrink-0 flex-col overflow-hidden border-r border-white/8 bg-[#080e1c]/98 px-5 py-5 shadow-[18px_0_60px_rgba(2,6,23,0.38)] backdrop-blur-xl'
     : 'sticky top-0 flex h-screen w-[88px] shrink-0 flex-col overflow-hidden border-r border-white/8 bg-[#080e1c]/95 px-3 py-5 shadow-[18px_0_60px_rgba(2,6,23,0.22)] backdrop-blur-xl lg:w-[280px] lg:px-5'
+  const {
+    profile = {},
+    stats: rawStats = [],
+    socials: rawSocials = [],
+    skillLevels = [],
+  } = portfolioData ?? {}
+  const isAvailableForWork = Boolean(profile?.availableForWork)
 
-  const statusStyles = profile.availableForWork
+  const statusStyles = isAvailableForWork
     ? {
         ring: 'ring-emerald-500/30',
         bgRing: 'bg-emerald-500/15',
@@ -134,7 +141,6 @@ export default function SideNav({ portfolioData, isDrawer = false, onClose, onNa
         textValue: 'text-slate-300',
         icon: 'text-slate-500/30 group-hover:text-slate-400/60'
       }
-  const { profile, stats: rawStats, socials: rawSocials, skillLevels } = portfolioData
   const stats = rawStats.map((s) => {
     const label = (s.label || '').replace('\n', ' ').split(' ').pop()
     return { label, value: s.value }
@@ -183,11 +189,11 @@ export default function SideNav({ portfolioData, isDrawer = false, onClose, onNa
               style={{ backgroundImage: `url(${profileImage})` }}
             />
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-white leading-tight">{profile.name}</p>
-              <p className="truncate text-[11px] text-slate-500 mt-0.5">{profile.title}</p>
+              <p className="truncate text-sm font-semibold text-white leading-tight">{profile?.name || 'Portfolio'}</p>
+              <p className="truncate text-[11px] text-slate-500 mt-0.5">{profile?.title || 'Developer'}</p>
               <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                 {skillLevels.slice(0, 2).map((skill, index) => (
-                  <span key={skill.label} className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-semibold border ${index === 0 ? 'bg-blue-500/15 text-blue-300 border-blue-500/20' : 'bg-violet-500/15 text-violet-300 border-violet-500/20'}`}>
+                  <span key={skill.label || index} className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-semibold border ${index === 0 ? 'bg-blue-500/15 text-blue-300 border-blue-500/20' : 'bg-violet-500/15 text-violet-300 border-violet-500/20'}`}>
                     {skill.label}
                   </span>
                 ))}
@@ -300,7 +306,7 @@ export default function SideNav({ portfolioData, isDrawer = false, onClose, onNa
           <div className={`${isDrawer ? 'hidden' : 'flex lg:hidden'} justify-center`}>
             <div className={`relative flex h-9 w-9 items-center justify-center rounded-full ${statusStyles.bgRing} ring-1 ${statusStyles.ring}`}>
               <span className="relative flex h-2 w-2">
-                {profile.availableForWork && <span className={`absolute inline-flex h-full w-full animate-ping rounded-full ${statusStyles.ping} opacity-60`} />}
+                {profile?.availableForWork && <span className={`absolute inline-flex h-full w-full animate-ping rounded-full ${statusStyles.ping} opacity-60`} />}
                 <span className={`relative inline-flex h-2 w-2 rounded-full ${statusStyles.dotSmall}`} />
               </span>
             </div>
@@ -312,13 +318,13 @@ export default function SideNav({ portfolioData, isDrawer = false, onClose, onNa
             <div className="relative flex items-center gap-3">
               <div className={`relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${statusStyles.bgRing} ring-1 ${statusStyles.ring}`}>
                 <span className="relative flex h-2.5 w-2.5">
-                  {profile.availableForWork && <span className={`absolute inline-flex h-full w-full animate-ping rounded-full ${statusStyles.ping} opacity-60`} />}
+                  {profile?.availableForWork && <span className={`absolute inline-flex h-full w-full animate-ping rounded-full ${statusStyles.ping} opacity-60`} />}
                   <span className={`relative inline-flex h-2.5 w-2.5 rounded-full ${statusStyles.dot}`} />
                 </span>
               </div>
               <div className="min-w-0 flex-1">
                 <p className={`text-[9px] font-bold tracking-[0.2em] ${statusStyles.textLabel} uppercase leading-none`}>Status</p>
-                <p className={`mt-1 text-sm font-semibold leading-none ${statusStyles.textValue}`}>{profile.availableForWork ? 'Available for work' : 'Currently unavailable'}</p>
+                <p className={`mt-1 text-sm font-semibold leading-none ${statusStyles.textValue}`}>{profile?.availableForWork ? 'Available for work' : 'Currently unavailable'}</p>
               </div>
               <svg className={`h-4 w-4 shrink-0 transition-transform duration-300 group-hover:translate-x-0.5 ${statusStyles.icon}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M5 12h14M12 5l7 7-7 7" />

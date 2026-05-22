@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { Component, useEffect, useState } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion as Motion } from 'framer-motion'
 import SideNav from './components/SideNav'
@@ -18,6 +18,39 @@ const pageTransition = {
 }
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002'
+
+class SideNavErrorBoundary extends Component {
+  constructor(props) {
+    super(props)
+    this.state = { hasError: false }
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+
+  componentDidCatch(error) {
+    console.error('SideNav crashed:', error)
+  }
+
+  componentDidUpdate(prevProps) {
+    if (this.state.hasError && this.props.resetKey !== prevProps.resetKey) {
+      this.setState({ hasError: false })
+    }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex h-full min-h-0 w-full items-center justify-center border-r border-white/8 bg-[#080e1c]/95 px-4 text-center text-sm text-slate-400">
+          Navigation is temporarily unavailable.
+        </div>
+      )
+    }
+
+    return this.props.children
+  }
+}
 
 function AppShell() {
   const location = useLocation()
@@ -62,6 +95,7 @@ function AppShell() {
   }).format(now)
 
   const isHome = location.pathname === '/'
+  const sideNavResetKey = `${location.pathname}:${portfolioData?.profile?.name || 'fallback'}`
 
   return (
     <main className="ambient-bg relative flex h-screen bg-[var(--bg)] text-[var(--text)]">
@@ -74,7 +108,9 @@ function AppShell() {
 
       {/* Desktop SideNav (hidden on mobile) */}
       <div className="hidden md:flex h-screen sticky top-0">
-        <SideNav portfolioData={portfolioData} />
+        <SideNavErrorBoundary resetKey={sideNavResetKey}>
+          <SideNav portfolioData={portfolioData} />
+        </SideNavErrorBoundary>
       </div>
 
       <AnimatePresence>
@@ -99,12 +135,14 @@ function AppShell() {
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', stiffness: 420, damping: 38 }}
             >
-              <SideNav
-                portfolioData={portfolioData}
-                isDrawer
-                onClose={() => setIsMenuOpen(false)}
-                onNavigate={() => setIsMenuOpen(false)}
-              />
+              <SideNavErrorBoundary resetKey={sideNavResetKey}>
+                <SideNav
+                  portfolioData={portfolioData}
+                  isDrawer
+                  onClose={() => setIsMenuOpen(false)}
+                  onNavigate={() => setIsMenuOpen(false)}
+                />
+              </SideNavErrorBoundary>
             </Motion.div>
           </Motion.div>
         )}
