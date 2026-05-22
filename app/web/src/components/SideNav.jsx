@@ -2,7 +2,6 @@ import { NavLink } from 'react-router-dom'
 import { motion as Motion } from 'framer-motion'
 import { useState, useEffect } from 'react'
 import profileImage from '../assets/images/profile.png'
-import { profile, stats as rawStats, socials as rawSocials, skillLevels } from '../data/portfolioData'
 
 const navItems = [
   {
@@ -54,12 +53,6 @@ const navItems = [
   },
 ]
 
-// Map raw stats from portfolioData to sidebar format
-const stats = rawStats.map(s => {
-  const label = s.label.replace('\n', ' ').split(' ').pop()
-  return { label, value: s.value }
-})
-
 // Map platform names to SVG icons for sidebar
 const socialIconMap = {
   github: (
@@ -92,12 +85,6 @@ const socialIconMap = {
   ),
 }
 
-const socials = rawSocials.map(s => ({
-  label: s.label,
-  href: s.href,
-  icon: socialIconMap[s.platform] || socialIconMap.email,
-}))
-
 function useClock() {
   const [now, setNow] = useState(new Date())
   useEffect(() => {
@@ -112,7 +99,7 @@ function useClock() {
   return { h, m, s, ampm, date }
 }
 
-export default function SideNav({ isDrawer = false, onClose, onNavigate }) {
+export default function SideNav({ portfolioData, isDrawer = false, onClose, onNavigate }) {
   const clock = useClock()
   const expandedClass = isDrawer ? 'block' : 'hidden lg:block'
   const expandedGridClass = isDrawer ? 'grid' : 'hidden lg:grid'
@@ -147,6 +134,16 @@ export default function SideNav({ isDrawer = false, onClose, onNavigate }) {
         textValue: 'text-slate-300',
         icon: 'text-slate-500/30 group-hover:text-slate-400/60'
       }
+  const { profile, stats: rawStats, socials: rawSocials, skillLevels } = portfolioData
+  const stats = rawStats.map((s) => {
+    const label = (s.label || '').replace('\n', ' ').split(' ').pop()
+    return { label, value: s.value }
+  })
+  const socials = rawSocials.map((s) => ({
+    label: s.label,
+    href: s.href,
+    icon: socialIconMap[s.platform] || socialIconMap.email,
+  }))
 
   return (
     <aside className={asideClass}>

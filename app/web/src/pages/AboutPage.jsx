@@ -1,8 +1,9 @@
 import { motion as Motion } from 'framer-motion'
 import Card from '../components/Card'
-import { audience, bioPoints, goals } from '../data/portfolioData'
 
-export default function AboutPage() {
+export default function AboutPage({ portfolioData }) {
+  const { audience, bioPoints, goals } = portfolioData
+
   return (
     <div className="space-y-4 pb-4 md:space-y-8">
       {/* Section header */}

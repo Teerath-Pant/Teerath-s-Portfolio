@@ -4,7 +4,15 @@ import profileImage from '../assets/images/profile.png'
 import nexusImg from '../assets/images/nexus.png'
 import syncImg from '../assets/images/sync.png'
 import auraImg from '../assets/images/aura.png'
-import { profile, stats, socials, technicalMastery, projectCards } from '../data/portfolioData'
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002'
+const getImageUrl = (imgUrl) => {
+  if (!imgUrl) return ''
+  if (imgUrl.startsWith('http://') || imgUrl.startsWith('https://') || imgUrl.startsWith('data:')) {
+    return imgUrl
+  }
+  return `${API_URL}${imgUrl}`
+}
 
 const projectImages = [nexusImg, syncImg, auraImg]
 
@@ -53,8 +61,10 @@ const masteryIcons = {
   devops: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
 }
 
-export default function HomePage({ now }) {
+export default function HomePage({ now, portfolioData }) {
   const navigate = useNavigate()
+  const { profile, stats, socials, technicalMastery, projectCards } = portfolioData
+  const featuredProjects = [...(projectCards || [])].slice(-3).reverse()
 
   const currentWeekday = new Intl.DateTimeFormat(undefined, { weekday: 'long' }).format(now)
   const currentDay = new Intl.DateTimeFormat(undefined, { day: 'numeric' }).format(now)
@@ -237,17 +247,17 @@ export default function HomePage({ now }) {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {(projectCards || []).slice(0, 3).map((proj, idx) => (
+          {featuredProjects.map((proj, idx) => (
             <Motion.div
               key={idx}
               whileHover={{ y: -5 }}
               className="flex flex-col overflow-hidden rounded-[1.5rem] border border-white/8 bg-[#0b1120] shadow-lg transition-colors hover:bg-white/[0.04]"
             >
-              <div className="h-48 w-full bg-cover bg-center border-b border-white/8" style={{ backgroundImage: `url(${(proj.images && proj.images[0]) || projectImages[idx % projectImages.length]})` }} />
+              <div className="h-48 w-full bg-cover bg-center border-b border-white/8" style={{ backgroundImage: `url(${getImageUrl(proj.images && proj.images[0]) || projectImages[idx % projectImages.length]})` }} />
               {proj.images && proj.images.length > 1 && (
                 <div className="flex gap-2 overflow-x-auto px-5 py-3 bg-[#060a13] border-b border-white/5 snap-x" style={{ scrollbarWidth: 'none' }}>
                   {proj.images.slice(1).map((imgUrl, imgIdx) => (
-                    <div key={imgIdx} className="h-12 w-16 shrink-0 rounded bg-cover bg-center border border-white/10 snap-start hover:border-white/30 transition-colors" style={{ backgroundImage: `url(${imgUrl})` }} />
+                    <div key={imgIdx} className="h-12 w-16 shrink-0 rounded bg-cover bg-center border border-white/10 snap-start hover:border-white/30 transition-colors" style={{ backgroundImage: `url(${getImageUrl(imgUrl)})` }} />
                   ))}
                 </div>
               )}

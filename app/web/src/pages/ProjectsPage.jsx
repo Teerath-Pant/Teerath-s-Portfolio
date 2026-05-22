@@ -1,6 +1,9 @@
 import { motion as Motion } from 'framer-motion'
-import Card from '../components/Card'
-import { projectCards } from '../data/portfolioData'
+
+function getProjectHref(link) {
+  if (!link || link === '#') return '/contact'
+  return /^https?:\/\//i.test(link) ? link : `https://${link}`
+}
 
 const tagColors = {
   'App Grid': 'from-blue-500/20 to-blue-600/10 border-blue-500/20 text-blue-300',
@@ -9,7 +12,9 @@ const tagColors = {
   'Progress': 'from-emerald-500/20 to-emerald-600/10 border-emerald-500/20 text-emerald-300',
 }
 
-export default function ProjectsPage({ trackProjectView }) {
+export default function ProjectsPage({ portfolioData, trackProjectView }) {
+  const { projectCards } = portfolioData
+
   return (
     <div className="space-y-4 pb-4 md:space-y-8">
       {/* Header */}
@@ -30,7 +35,7 @@ export default function ProjectsPage({ trackProjectView }) {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 md:gap-6">
         {projectCards.map((project, index) => (
           <Motion.div
-            key={project.title}
+            key={`${project.id ?? project.title ?? 'project'}-${index}`}
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.32, delay: index * 0.09 }}
@@ -55,7 +60,7 @@ export default function ProjectsPage({ trackProjectView }) {
 
                 {/* View button */}
                 <a
-                  href={project.link && project.link !== '#' ? project.link : "/contact"}
+                  href={getProjectHref(project.link)}
                   onClick={() => trackProjectView?.(project.title)}
                   className="mt-4 shrink-0 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-[10px] font-semibold tracking-[0.15em] text-white/60 uppercase transition-all hover:border-blue-500/40 hover:bg-blue-500/10 hover:text-blue-300 md:text-xs"
                 >

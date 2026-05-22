@@ -2,7 +2,6 @@ import { useEffect, useRef } from 'react'
 import { motion as Motion } from 'framer-motion'
 import { animate, stagger } from 'animejs'
 import Card from '../components/Card'
-import { futureEnhancements, skillLevels } from '../data/portfolioData'
 
 const skillColors = [
   { from: '#4f8ef7', to: '#818cf8', glow: 'rgba(79,142,247,0.45)' },
@@ -12,8 +11,9 @@ const skillColors = [
   { from: '#fb923c', to: '#f97316', glow: 'rgba(251,146,60,0.4)' },
 ]
 
-export default function SkillsPage() {
+export default function SkillsPage({ portfolioData }) {
   const meterRef = useRef(null)
+  const { futureEnhancements, skillLevels } = portfolioData
 
   useEffect(() => {
     if (!meterRef.current) return undefined
@@ -40,7 +40,7 @@ export default function SkillsPage() {
       fillAnimation.pause()
       labelAnimation.pause()
     }
-  }, [])
+  }, [skillLevels])
 
   return (
     <div className="space-y-4 pb-4 md:space-y-8">

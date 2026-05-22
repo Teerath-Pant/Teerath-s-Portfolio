@@ -8,6 +8,7 @@ import HomePage from './pages/HomePage'
 import ProjectsPage from './pages/ProjectsPage'
 import SkillsPage from './pages/SkillsPage'
 import { useAnalytics } from './hooks/useAnalytics'
+import { getFallbackPortfolioData, normalizePortfolioData } from './lib/portfolioData'
 
 const pageTransition = {
   initial: { opacity: 0, y: 20, scale: 0.98 },
@@ -16,11 +17,14 @@ const pageTransition = {
   transition: { duration: 0.3, ease: 'easeOut' },
 }
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002'
+
 function AppShell() {
   const location = useLocation()
   const navigate = useNavigate()
   const [now, setNow] = useState(() => new Date())
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [portfolioData, setPortfolioData] = useState(() => getFallbackPortfolioData())
 
   // Analytics: fire pageview on every route change
   const { trackProjectView, trackContactClick } = useAnalytics(location.pathname)
@@ -28,6 +32,28 @@ function AppShell() {
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 1000)
     return () => window.clearInterval(timer)
+  }, [])
+
+  useEffect(() => {
+    let ignore = false
+
+    async function loadPortfolioData() {
+      try {
+        const res = await fetch(`${API_URL}/api/load`)
+        const json = await res.json()
+        if (!ignore && json.ok && json.data) {
+          setPortfolioData(normalizePortfolioData(json.data))
+        }
+      } catch {
+        // Keep static fallback data when the API is unavailable.
+      }
+    }
+
+    loadPortfolioData()
+
+    return () => {
+      ignore = true
+    }
   }, [])
 
   const currentTime = new Intl.DateTimeFormat(undefined, {
@@ -48,7 +74,7 @@ function AppShell() {
 
       {/* Desktop SideNav (hidden on mobile) */}
       <div className="hidden md:flex h-screen sticky top-0">
-        <SideNav />
+        <SideNav portfolioData={portfolioData} />
       </div>
 
       <AnimatePresence>
@@ -73,7 +99,12 @@ function AppShell() {
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', stiffness: 420, damping: 38 }}
             >
-              <SideNav isDrawer onClose={() => setIsMenuOpen(false)} onNavigate={() => setIsMenuOpen(false)} />
+              <SideNav
+                portfolioData={portfolioData}
+                isDrawer
+                onClose={() => setIsMenuOpen(false)}
+                onNavigate={() => setIsMenuOpen(false)}
+              />
             </Motion.div>
           </Motion.div>
         )}
@@ -120,11 +151,11 @@ function AppShell() {
           <div className="mx-auto min-h-full max-w-5xl flex flex-col">
             <AnimatePresence mode="wait">
               <Routes location={location} key={location.pathname}>
-                <Route path="/" element={<Motion.div {...pageTransition} className="flex-1"><HomePage now={now} /></Motion.div>} />
-                <Route path="/about" element={<Motion.div {...pageTransition} className="flex-1"><AboutPage /></Motion.div>} />
-                <Route path="/projects" element={<Motion.div {...pageTransition} className="flex-1"><ProjectsPage trackProjectView={trackProjectView} /></Motion.div>} />
-                <Route path="/skills" element={<Motion.div {...pageTransition} className="flex-1"><SkillsPage /></Motion.div>} />
-                <Route path="/contact" element={<Motion.div {...pageTransition} className="flex-1"><ContactPage trackContactClick={trackContactClick} /></Motion.div>} />
+                <Route path="/" element={<Motion.div {...pageTransition} className="flex-1"><HomePage now={now} portfolioData={portfolioData} /></Motion.div>} />
+                <Route path="/about" element={<Motion.div {...pageTransition} className="flex-1"><AboutPage portfolioData={portfolioData} /></Motion.div>} />
+                <Route path="/projects" element={<Motion.div {...pageTransition} className="flex-1"><ProjectsPage portfolioData={portfolioData} trackProjectView={trackProjectView} /></Motion.div>} />
+                <Route path="/skills" element={<Motion.div {...pageTransition} className="flex-1"><SkillsPage portfolioData={portfolioData} /></Motion.div>} />
+                <Route path="/contact" element={<Motion.div {...pageTransition} className="flex-1"><ContactPage portfolioData={portfolioData} trackContactClick={trackContactClick} /></Motion.div>} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </AnimatePresence>

@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { motion as Motion } from 'framer-motion'
 import Card from '../components/Card'
 import FeedbackForm from '../components/FeedbackForm'
-import { socials } from '../data/portfolioData'
 
 const iconMap = {
   email: {
@@ -46,8 +45,9 @@ const iconMap = {
   }
 }
 
-export default function ContactPage({ trackContactClick }) {
+export default function ContactPage({ portfolioData, trackContactClick }) {
   const [sent, setSent] = useState(false)
+  const { socials } = portfolioData
 
   return (
     <div className="space-y-4 pb-4 md:space-y-8">

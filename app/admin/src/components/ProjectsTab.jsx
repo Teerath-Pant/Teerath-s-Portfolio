@@ -1,5 +1,14 @@
 import { useState } from 'react'
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002'
+const getImageUrl = (imgUrl) => {
+  if (!imgUrl) return ''
+  if (imgUrl.startsWith('http://') || imgUrl.startsWith('https://') || imgUrl.startsWith('data:')) {
+    return imgUrl
+  }
+  return `${API_URL}${imgUrl}`
+}
+
 const TAG_OPTIONS = ['Full Stack', 'UI/UX', 'Backend', 'Frontend', 'AI', 'Mobile', 'Open Source', 'Other']
 const TAG_COLORS = {
   'Full Stack': '#4f8ef7', 'UI/UX': '#a78bfa', 'Backend': '#34d399',
@@ -50,7 +59,7 @@ function ProjectCard({ project, index, onChange, onRemove }) {
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.5rem' }}>
               {(project.images || []).map((imgUrl, imgIdx) => (
                 <div key={imgIdx} style={{ position: 'relative', width: '60px', height: '60px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border)' }}>
-                  <img src={imgUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src={getImageUrl(imgUrl)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   <button 
                     onClick={() => {
                       const newImgs = [...project.images]
@@ -75,18 +84,15 @@ function ProjectCard({ project, index, onChange, onRemove }) {
                 const newImages = [...(project.images || [])]
                 for (const file of files) {
                   const reader = new FileReader()
-                  const dataUrl = await new Promise(res => {
+                  const dataUrl = await new Promise((res, rej) => {
                     reader.onload = () => res(reader.result)
+                    reader.onerror = () => rej(reader.error)
                     reader.readAsDataURL(file)
                   })
-                  
-                  const response = await fetch('/api/upload', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ filename: file.name, data: dataUrl })
-                  })
-                  const result = await response.json()
-                  if (result.ok) newImages.push(result.url)
+
+                  if (typeof dataUrl === 'string') {
+                    newImages.push(dataUrl)
+                  }
                 }
                 onChange({ ...project, images: newImages })
                 e.target.value = ''
@@ -125,7 +131,7 @@ export default function ProjectsTab({ data, setData }) {
   function addProject() {
     setData(d => ({
       ...d,
-      projectCards: [...d.projectCards, { title: 'New Project', description: 'Project description', tag: 'Full Stack', link: '#' }],
+      projectCards: [...d.projectCards, { title: 'New Project', description: 'Project description', tag: 'Full Stack', link: '#', images: [] }],
     }))
   }
 
