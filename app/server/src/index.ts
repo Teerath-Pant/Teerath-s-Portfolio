@@ -65,6 +65,31 @@ function parseJsonArray(value: string | null) {
   }
 }
 
+function isLegacyUploadImage(value: unknown) {
+  return typeof value === 'string' && /\/api\/uploads\//i.test(value)
+}
+
+function sanitizeImageList(images: unknown) {
+  if (!Array.isArray(images)) return []
+  return images.filter((image) => typeof image === 'string' && !isLegacyUploadImage(image))
+}
+
+function sanitizeProjectCard(project: any) {
+  return {
+    ...project,
+    images: sanitizeImageList(project?.images),
+  }
+}
+
+function sanitizePortfolioPayload(data: any) {
+  return {
+    ...data,
+    projectCards: Array.isArray(data?.projectCards)
+      ? data.projectCards.map((project: any) => sanitizeProjectCard(project))
+      : [],
+  }
+}
+
 // ─────────────────────────────────────────────
 // HEALTH CHECK
 // ─────────────────────────────────────────────
@@ -142,7 +167,7 @@ app.get('/api/load', async (_req, res) => {
 
     const profile = profileRows[0] || null
 
-    const data = {
+    const data = sanitizePortfolioPayload({
       profile,
       goals:               goalRows.map(r => r.text),
       audience:            audienceRows.map(r => r.text),
@@ -159,7 +184,7 @@ app.get('/api/load', async (_req, res) => {
       futureEnhancements:  enhancementRows.map(r => r.text),
       socials:             socialRows,
       stats:               statRows,
-    }
+    })
 
     res.json({ ok: true, data })
   } catch (err) {
@@ -210,7 +235,7 @@ export const stats = ${JSON.stringify(data.stats || [], null, 2)}
 // POST /api/save
 // ─────────────────────────────────────────────
 app.post('/api/save', async (req, res) => {
-  const data = req.body
+  const data = sanitizePortfolioPayload(req.body)
   try {
     // ── Profile ──
     if (data.profile) {
@@ -257,7 +282,7 @@ app.post('/api/save', async (req, res) => {
         await db.insert(schema.portfolioProjects).values(
           data.projectCards.map((p: any) => ({
             ...p,
-            images: p.images ? JSON.stringify(p.images) : null,
+            images: p.images.length > 0 ? JSON.stringify(p.images) : null,
           }))
         )
       }

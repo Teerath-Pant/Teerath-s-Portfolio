@@ -58,9 +58,7 @@ export const projectCards = [
     "description": "Full-stack shopping app with cart, auth and payments built with React and Node.js.",
     "tag": "Full Stack",
     "link": "",
-    "images": [
-      "/api/uploads/test_upload_1779434089636.png"
-    ]
+    "images": []
   },
   {
     "id": 2,
