@@ -8,6 +8,7 @@ import HomePage from './pages/HomePage'
 import ProjectsPage from './pages/ProjectsPage'
 import SkillsPage from './pages/SkillsPage'
 import { useAnalytics } from './hooks/useAnalytics'
+import { API_URL } from './lib/api'
 import { getFallbackPortfolioData, normalizePortfolioData } from './lib/portfolioData'
 
 const pageTransition = {
@@ -16,8 +17,6 @@ const pageTransition = {
   exit: { opacity: 0, y: -12, scale: 0.98 },
   transition: { duration: 0.3, ease: 'easeOut' },
 }
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002'
 
 class SideNavErrorBoundary extends Component {
   constructor(props) {

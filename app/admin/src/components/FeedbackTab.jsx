@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion as Motion } from 'framer-motion'
+import { API_URL } from '../lib/api.js'
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5002'
-const API = `${API_BASE}/api/feedback`
+const API = `${API_URL}/api/feedback`
 
 // ── Stat card ──
 function StatCard({ label, value, icon, color = '#4f8ef7', sub }) {

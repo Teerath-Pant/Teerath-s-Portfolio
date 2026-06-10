@@ -4,8 +4,8 @@ import profileImage from '../assets/images/profile.png'
 import nexusImg from '../assets/images/nexus.png'
 import syncImg from '../assets/images/sync.png'
 import auraImg from '../assets/images/aura.png'
+import { API_URL } from '../lib/api'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002'
 const getImageUrl = (imgUrl) => {
   if (!imgUrl) return ''
   if (imgUrl.startsWith('http://') || imgUrl.startsWith('https://') || imgUrl.startsWith('data:')) {

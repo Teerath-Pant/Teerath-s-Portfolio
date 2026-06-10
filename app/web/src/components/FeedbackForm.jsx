@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { motion as Motion } from 'framer-motion'
 import Card from './Card'
+import { API_URL } from '../lib/api'
 
 export default function FeedbackForm() {
   const [rating, setRating] = useState(0)
@@ -18,7 +19,6 @@ export default function FeedbackForm() {
 
     setStatus('submitting')
     try {
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002'
       const res = await fetch(`${API_URL}/api/feedback`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

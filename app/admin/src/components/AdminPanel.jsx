@@ -8,6 +8,7 @@ import SkillsTab from './SkillsTab.jsx'
 import SocialsTab from './SocialsTab.jsx'
 import AnalyticsDashboard from './AnalyticsDashboard.jsx'
 import FeedbackTab from './FeedbackTab.jsx'
+import { API_URL } from '../lib/api.js'
 
 const STORAGE_KEY = 'portfolio_admin_data'
 
@@ -51,7 +52,6 @@ export default function AdminPanel({ onLogout }) {
     async function initData() {
       let sourceData = defaultData
       try {
-        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002'
         const res = await fetch(`${API_URL}/api/load`)
         const json = await res.json()
         if (json.ok && json.data) {
@@ -93,7 +93,6 @@ export default function AdminPanel({ onLogout }) {
   async function saveToPortfolio() {
     setSaving(true)
     try {
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002'
       const res = await fetch(`${API_URL}/api/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

@@ -1,6 +1,6 @@
 import { useState } from 'react'
+import { API_URL } from '../lib/api.js'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002'
 const getImageUrl = (imgUrl) => {
   if (!imgUrl) return ''
   if (imgUrl.startsWith('http://') || imgUrl.startsWith('https://') || imgUrl.startsWith('data:')) {

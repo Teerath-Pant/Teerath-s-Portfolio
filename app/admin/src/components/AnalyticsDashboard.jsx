@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion as Motion, AnimatePresence } from 'framer-motion'
+import { API_URL } from '../lib/api.js'
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5002'
-const API = `${API_BASE}/api/analytics`
+const API = `${API_URL}/api/analytics`
 const EMPTY_ANALYTICS = {
   selfFiltered: false,
   totalVisits: 0,
