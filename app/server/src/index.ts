@@ -74,9 +74,10 @@ function sanitizeImageList(images: unknown) {
   return images.filter((image) => typeof image === 'string' && !isLegacyUploadImage(image))
 }
 
-function sanitizeProjectCard(project: any) {
+function sanitizeProjectCard(project: any, index = 0) {
   return {
     ...project,
+    showOnHome: typeof project?.showOnHome === 'boolean' ? project.showOnHome : index < 3,
     images: sanitizeImageList(project?.images),
   }
 }
@@ -85,7 +86,7 @@ function sanitizePortfolioPayload(data: any) {
   return {
     ...data,
     projectCards: Array.isArray(data?.projectCards)
-      ? data.projectCards.map((project: any) => sanitizeProjectCard(project))
+      ? data.projectCards.map((project: any, index: number) => sanitizeProjectCard(project, index))
       : [],
   }
 }

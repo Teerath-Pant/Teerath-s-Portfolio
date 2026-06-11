@@ -97,6 +97,7 @@ export const portfolioProjects = pgTable('portfolio_projects', {
   tag: varchar('tag', { length: 128 }),
   link: varchar('link', { length: 1024 }),
   images: text('images'), // JSON array of image URLs
+  showOnHome: boolean('show_on_home').default(false),
 });
 
 export const portfolioSkillLevels = pgTable('portfolio_skill_levels', {

@@ -52,24 +52,28 @@ export const defaultData = {
       description: 'Full-stack shopping app with cart, auth and payments built with React and Node.js.',
       tag: 'Full Stack',
       link: '#',
+      showOnHome: true,
     },
     {
       title: 'Portfolio OS',
       description: 'This very portfolio — an Android OS-inspired interface with smooth animations.',
       tag: 'UI/UX',
       link: '#',
+      showOnHome: true,
     },
     {
       title: 'Real-Time Chat',
       description: 'WebSocket-powered chat application with rooms, typing indicators and message history.',
       tag: 'Backend',
       link: '#',
+      showOnHome: true,
     },
     {
       title: 'AI Dashboard',
       description: 'Analytics dashboard integrating OpenAI API for data summarisation and insights.',
       tag: 'AI',
       link: '#',
+      showOnHome: false,
     },
   ],
 

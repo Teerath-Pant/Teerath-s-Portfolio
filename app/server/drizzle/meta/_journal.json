@@ -8,6 +8,13 @@
       "when": 1779173582908,
       "tag": "0000_bored_night_thrasher",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1781171380232,
+      "tag": "0001_add_project_home_toggle",
+      "breakpoints": true
     }
   ]
 }

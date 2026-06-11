@@ -58,7 +58,8 @@ export const projectCards = [
     "description": "Full-stack shopping app with cart, auth and payments built with React and Node.js.",
     "tag": "Full Stack",
     "link": "",
-    "images": []
+    "images": [],
+    "showOnHome": true
   },
   {
     "id": 2,
@@ -66,7 +67,8 @@ export const projectCards = [
     "description": "This very portfolio  is for my first achivement.",
     "tag": "UI/UX",
     "link": "teerathpant.netlify.app",
-    "images": []
+    "images": [],
+    "showOnHome": true
   },
   {
     "id": 3,
@@ -74,7 +76,8 @@ export const projectCards = [
     "description": "WebSocket-powered chat application with rooms, typing indicators and message history.",
     "tag": "Backend",
     "link": "#",
-    "images": []
+    "images": [],
+    "showOnHome": true
   }
 ]
 

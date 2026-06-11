@@ -12,8 +12,9 @@ function isLegacyUploadImage(value) {
 function sanitizeProjectCards(projectCards) {
   if (!Array.isArray(projectCards)) return staticPortfolioData.projectCards || []
 
-  return projectCards.map((project) => ({
+  return projectCards.map((project, index) => ({
     ...project,
+    showOnHome: typeof project?.showOnHome === 'boolean' ? project.showOnHome : index < 3,
     images: Array.isArray(project?.images)
       ? project.images.filter((image) => typeof image === 'string' && !isLegacyUploadImage(image))
       : [],

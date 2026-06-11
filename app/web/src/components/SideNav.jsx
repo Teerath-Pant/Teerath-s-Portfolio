@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import { motion as Motion } from 'framer-motion'
 import { useState, useEffect } from 'react'
-import profileImage from '../assets/images/profile.png'
+import My_image from '../assets/images/My_image.png'
 
 const navItems = [
   {
@@ -155,11 +155,11 @@ export default function SideNav({ portfolioData, isDrawer = false, onClose, onNa
     <aside className={asideClass}>
 
       {/* ── Logo / Brand ── */}
-      <div className={`flex h-14 items-center gap-3 ${isDrawer ? 'justify-start' : 'justify-center lg:justify-start'}`}>
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-lg font-bold text-white shadow-[0_0_24px_rgba(59,130,246,0.32)]">
-          P
-        </div>
-        <span className={`${expandedClass} min-w-0 font-heading text-lg font-semibold tracking-wide text-white`}>Portfolio</span>
+      <div className={`flex items-center gap-3 ${isDrawer ? 'justify-start' : 'justify-center lg:justify-start'}`}>
+        {/* <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-lg font-bold text-white shadow-[0_0_24px_rgba(59,130,246,0.32)]">
+          
+        </div> */}
+        <span className={`${expandedClass} min-w-0 font-heading text-lg font-semibold tracking-wide text-white`} ></span>
         {isDrawer && (
           <button
             type="button"
@@ -186,7 +186,7 @@ export default function SideNav({ portfolioData, isDrawer = false, onClose, onNa
           <div className="relative flex items-center gap-3">
             <div
               className="h-10 w-10 shrink-0 rounded-xl border border-white/15 bg-cover bg-center shadow-lg"
-              style={{ backgroundImage: `url(${profileImage})` }}
+              style={{ backgroundImage: `url(${My_image})` }}
             />
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-white leading-tight">{profile?.name || 'Portfolio'}</p>

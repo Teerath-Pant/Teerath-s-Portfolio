@@ -10,15 +10,23 @@ const getImageUrl = (imgUrl) => {
 }
 
 const TAG_OPTIONS = ['Full Stack', 'UI/UX', 'Backend', 'Frontend', 'AI', 'Mobile', 'Open Source', 'Other']
+const MAX_HOME_PROJECTS = 3
 const TAG_COLORS = {
   'Full Stack': '#4f8ef7', 'UI/UX': '#a78bfa', 'Backend': '#34d399',
   'Frontend': '#38bdf8', 'AI': '#f59e0b', 'Mobile': '#fb7185',
   'Open Source': '#22c55e', 'Other': '#94a3b8',
 }
 
-function ProjectCard({ project, index, onChange, onRemove }) {
+function ProjectCard({ project, onChange, onRemove, homeProjectCount }) {
   const [open, setOpen] = useState(false)
   const color = TAG_COLORS[project.tag] ?? '#4f8ef7'
+  const showOnHome = Boolean(project.showOnHome)
+  const homeLimitReached = !showOnHome && homeProjectCount >= MAX_HOME_PROJECTS
+  const toggleHomeProject = (event) => {
+    event.stopPropagation()
+    if (homeLimitReached) return
+    onChange({ ...project, showOnHome: !showOnHome })
+  }
 
   return (
     <div style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: '1rem', overflow: 'hidden' }}>
@@ -33,6 +41,27 @@ function ProjectCard({ project, index, onChange, onRemove }) {
         <span style={{ flex: 1, color: '#fff', fontWeight: 600, fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {project.title || 'Untitled Project'}
         </span>
+        <button
+          type="button"
+          onClick={toggleHomeProject}
+          disabled={homeLimitReached}
+          title={homeLimitReached ? 'Only 3 projects can appear on the home page' : showOnHome ? 'Hide from home page' : 'Show on home page'}
+          style={{
+            border: '1px solid',
+            borderColor: showOnHome ? 'rgba(52,211,153,0.45)' : 'var(--border)',
+            background: showOnHome ? 'rgba(52,211,153,0.15)' : 'rgba(255,255,255,0.04)',
+            color: showOnHome ? '#86efac' : 'var(--muted)',
+            borderRadius: '99px',
+            padding: '0.25rem 0.6rem',
+            fontSize: '0.68rem',
+            fontWeight: 700,
+            cursor: homeLimitReached ? 'not-allowed' : 'pointer',
+            opacity: homeLimitReached ? 0.45 : 1,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {showOnHome ? 'Home: ON' : 'Home: OFF'}
+        </button>
         <div style={{ display: 'flex', gap: '0.4rem', flexShrink: 0 }}>
           <button onClick={e => { e.stopPropagation(); onRemove() }} className="btn btn-danger" style={{ padding: '0.3rem 0.5rem', fontSize: '0.72rem' }}>✕</button>
           <span style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>{open ? '▲' : '▼'}</span>
@@ -53,6 +82,33 @@ function ProjectCard({ project, index, onChange, onRemove }) {
           <div>
             <label className="label">Link / URL</label>
             <input type="text" className="field" value={project.link} onChange={e => onChange({ ...project, link: e.target.value })} placeholder="https://github.com/..." />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', border: '1px solid var(--border)', borderRadius: '0.875rem', padding: '0.75rem 0.875rem', background: 'rgba(255,255,255,0.025)' }}>
+            <div>
+              <label className="label" style={{ marginBottom: '0.15rem' }}>Show on home page</label>
+              <p style={{ margin: 0, color: 'var(--muted)', fontSize: '0.72rem' }}>Choose up to {MAX_HOME_PROJECTS} projects for Featured Work.</p>
+            </div>
+            <button
+              type="button"
+              onClick={toggleHomeProject}
+              disabled={homeLimitReached}
+              style={{
+                position: 'relative',
+                width: '44px',
+                height: '24px',
+                borderRadius: '99px',
+                border: 'none',
+                background: showOnHome ? 'rgba(52,211,153,0.85)' : 'rgba(148,163,184,0.25)',
+                cursor: homeLimitReached ? 'not-allowed' : 'pointer',
+                opacity: homeLimitReached ? 0.5 : 1,
+                transition: 'background 0.2s',
+                flexShrink: 0,
+              }}
+              aria-pressed={showOnHome}
+              aria-label={`${showOnHome ? 'Hide' : 'Show'} ${project.title || 'project'} on home page`}
+            >
+              <span style={{ position: 'absolute', top: '3px', left: showOnHome ? '23px' : '3px', width: '18px', height: '18px', borderRadius: '50%', background: '#fff', transition: 'left 0.2s', display: 'block' }} />
+            </button>
           </div>
           <div>
             <label className="label">Project Images</label>
@@ -123,6 +179,8 @@ function ProjectCard({ project, index, onChange, onRemove }) {
 }
 
 export default function ProjectsTab({ data, setData }) {
+  const homeProjectCount = data.projectCards.filter(project => project.showOnHome).length
+
   function updateProject(i, val) {
     const arr = [...data.projectCards]; arr[i] = val
     setData(d => ({ ...d, projectCards: arr }))
@@ -131,7 +189,7 @@ export default function ProjectsTab({ data, setData }) {
   function addProject() {
     setData(d => ({
       ...d,
-      projectCards: [...d.projectCards, { title: 'New Project', description: 'Project description', tag: 'Full Stack', link: '#', images: [] }],
+      projectCards: [...d.projectCards, { title: 'New Project', description: 'Project description', tag: 'Full Stack', link: '#', images: [], showOnHome: false }],
     }))
   }
 
@@ -141,7 +199,7 @@ export default function ProjectsTab({ data, setData }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
           <div>
             <h3 style={{ fontFamily: 'var(--font-head)', fontWeight: 700, color: '#fff', fontSize: '0.95rem' }}>Project Cards</h3>
-            <p style={{ color: 'var(--muted)', fontSize: '0.75rem', marginTop: '0.2rem' }}>{data.projectCards.length} projects</p>
+            <p style={{ color: 'var(--muted)', fontSize: '0.75rem', marginTop: '0.2rem' }}>{data.projectCards.length} projects | {homeProjectCount}/{MAX_HOME_PROJECTS} on home</p>
           </div>
           <button onClick={addProject} className="btn btn-primary" style={{ fontSize: '0.78rem' }}>
             + Add Project
@@ -149,7 +207,7 @@ export default function ProjectsTab({ data, setData }) {
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           {data.projectCards.map((project, i) => (
-            <ProjectCard key={i} project={project} index={i} onChange={v => updateProject(i, v)} onRemove={() => removeProject(i)} />
+            <ProjectCard key={i} project={project} onChange={v => updateProject(i, v)} onRemove={() => removeProject(i)} homeProjectCount={homeProjectCount} />
           ))}
           {data.projectCards.length === 0 && (
             <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--muted)', fontSize: '0.82rem' }}>

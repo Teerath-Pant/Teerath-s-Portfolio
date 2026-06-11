@@ -64,7 +64,7 @@ const masteryIcons = {
 export default function HomePage({ now, portfolioData }) {
   const navigate = useNavigate()
   const { profile, stats, socials, technicalMastery, projectCards } = portfolioData
-  const featuredProjects = [...(projectCards || [])].slice(-3).reverse()
+  const featuredProjects = (projectCards || []).filter(project => project.showOnHome).slice(0, 3)
 
   const currentWeekday = new Intl.DateTimeFormat(undefined, { weekday: 'long' }).format(now)
   const currentDay = new Intl.DateTimeFormat(undefined, { day: 'numeric' }).format(now)
@@ -159,7 +159,7 @@ export default function HomePage({ now, portfolioData }) {
 
             {/* Stats row */}
             <Motion.div {...fadeUp(0.25)} className="mt-8 flex flex-wrap items-center gap-6 lg:gap-10">
-              {stats.map((s, i) => (
+              {stats.map((s) => (
                 <div key={s.label} className="flex flex-col">
                   <span className="font-heading text-center text-3xl font-extrabold text-white lg:text-4xl">{s.value}</span>
                   <span className="mt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 whitespace-pre-line leading-4">{s.label}</span>
@@ -241,9 +241,13 @@ export default function HomePage({ now, portfolioData }) {
             <h2 className="font-heading text-2xl font-bold text-white md:text-3xl">Featured Work</h2>
             <p className="mt-2 text-sm text-slate-400">A curated selection of technical solutions and creative builds.</p>
           </div>
-          <a href="/projects" className="text-sm font-semibold text-white hover:text-blue-400 transition-colors flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => navigate('/projects')}
+            className="text-sm font-semibold text-white hover:text-blue-400 transition-colors flex items-center gap-2"
+          >
             Browse all projects <span aria-hidden="true">&rarr;</span>
-          </a>
+          </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
