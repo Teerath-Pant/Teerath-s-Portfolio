@@ -71,7 +71,7 @@ export const portfolioProfile = pgTable('portfolio_profile', {
   headline: varchar('headline', { length: 256 }),
   subtext: text('subtext'),
   availableForWork: boolean('available_for_work').default(true),
-  avatarUrl: varchar('avatar_url', { length: 1024 }),
+  avatarUrl: text('avatar_url'),
 });
 
 export const portfolioGoals = pgTable('portfolio_goals', {
