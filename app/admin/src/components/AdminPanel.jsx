@@ -81,7 +81,11 @@ export default function AdminPanel({ onLogout }) {
   // Persist to localStorage on every change
   useEffect(() => {
     if (data) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+      } catch (err) {
+        console.warn('Failed to save data to localStorage (e.g. quota exceeded):', err)
+      }
     }
   }, [data])
 
