@@ -2,6 +2,15 @@ import { NavLink } from 'react-router-dom'
 import { motion as Motion } from 'framer-motion'
 import { useState, useEffect } from 'react'
 import My_image from '../assets/images/My_image.png'
+import { API_URL } from '../lib/api'
+
+const getImageUrl = (imgUrl) => {
+  if (!imgUrl) return ''
+  if (imgUrl.startsWith('http://') || imgUrl.startsWith('https://') || imgUrl.startsWith('data:')) {
+    return imgUrl
+  }
+  return `${API_URL}${imgUrl}`
+}
 
 const navItems = [
   {
@@ -186,7 +195,7 @@ export default function SideNav({ portfolioData, isDrawer = false, onClose, onNa
           <div className="relative flex items-center gap-3">
             <div
               className="h-10 w-10 shrink-0 rounded-xl border border-white/15 bg-cover bg-center shadow-lg"
-              style={{ backgroundImage: `url(${My_image})` }}
+              style={{ backgroundImage: `url(${profile?.avatarUrl ? getImageUrl(profile.avatarUrl) : My_image})` }}
             />
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-white leading-tight">{profile?.name || 'Portfolio'}</p>

@@ -1,9 +1,7 @@
-import { motion as Motion } from 'framer-motion'
+import { useState } from 'react'
+import { motion as Motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import profileImage from '../assets/images/profile.png'
-import nexusImg from '../assets/images/nexus.png'
-import syncImg from '../assets/images/sync.png'
-import auraImg from '../assets/images/aura.png'
 import { API_URL } from '../lib/api'
 
 const getImageUrl = (imgUrl) => {
@@ -14,16 +12,12 @@ const getImageUrl = (imgUrl) => {
   return `${API_URL}${imgUrl}`
 }
 
-const projectImages = [nexusImg, syncImg, auraImg]
-
-// ── Animation helpers ──────────────────────────────────────────────
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 22 },
   animate: { opacity: 1, y: 0 },
   transition: { duration: 0.45, ease: 'easeOut', delay },
 })
 
-// Map platform names to SVG icons
 const socialIcons = {
   github: (
     <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
@@ -54,13 +48,167 @@ const socialIcons = {
   ),
 }
 
-// Map technical mastery categories to SVG icons
 const masteryIcons = {
   frontend: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>,
   backend: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>,
   devops: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
 }
 
+// ── Per-project card with its own image slider ─────────────────────
+function ProjectCard({ proj, index }) {
+  const [imgIdx, setImgIdx] = useState(0)
+  const [zoomed, setZoomed] = useState(false)
+  const imgs = (proj.images || []).filter(Boolean)
+  const hasMany = imgs.length > 1
+
+  const goImg = (d) => setImgIdx(i => (i + d + imgs.length) % imgs.length)
+
+  const href = proj.link && proj.link !== '#'
+    ? (proj.link.match(/^https?:\/\//i) ? proj.link : `https://${proj.link}`)
+    : '#'
+
+  return (
+    <Motion.div
+      initial={{ opacity: 0, y: 28 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-40px' }}
+      transition={{ duration: 0.5, delay: index * 0.1 }}
+      className="overflow-hidden rounded-[1.5rem] border border-white/8 bg-[#0b1120] shadow-lg"
+    >
+      {/* Image slider */}
+      <div className="relative h-52 md:h-[28rem] overflow-hidden">
+        {/* Track */}
+        <div
+          className="flex h-full transition-transform duration-500"
+          style={{ transform: `translateX(-${imgIdx * 100}%)`, transitionTimingFunction: 'cubic-bezier(0.77,0,0.175,1)' }}
+        >
+          {imgs.length > 0 ? imgs.map((img, ii) => (
+            <div
+              key={ii}
+              className="min-w-full h-full overflow-hidden"
+              onMouseEnter={() => setZoomed(true)}
+              onMouseLeave={() => setZoomed(false)}
+              onTouchStart={() => setZoomed(true)}
+              onTouchEnd={() => setTimeout(() => setZoomed(false), 600)}
+            >
+              <img
+                src={getImageUrl(img)}
+                alt=""
+                className="w-full h-full object-cover transition-transform duration-700 ease-out"
+                style={{ transform: zoomed && ii === imgIdx ? 'scale(1.1)' : 'scale(1)' }}
+              />
+            </div>
+          )) : (
+            <div className="min-w-full h-full bg-white/5" />
+          )}
+        </div>
+
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0b1120]/60 via-transparent to-transparent pointer-events-none" />
+
+        {/* Tag */}
+        {proj.tag && (
+          <span className="absolute top-3 left-3 rounded-full border border-white/15 bg-black/50 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-white backdrop-blur-sm">
+            {proj.tag}
+          </span>
+        )}
+
+        {/* Arrows */}
+        {hasMany && (
+          <>
+            {[-1, 1].map(d => (
+              <Motion.button
+                key={d}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.92 }}
+                onClick={() => goImg(d)}
+                className={`absolute top-1/2 -translate-y-1/2 ${d === -1 ? 'left-2.5' : 'right-2.5'} flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-black/50 text-white text-lg backdrop-blur-sm hover:bg-black/75 transition-colors`}
+                aria-label={d === -1 ? 'Previous image' : 'Next image'}
+              >
+                {d === -1 ? '‹' : '›'}
+              </Motion.button>
+            ))}
+          </>
+        )}
+
+        {/* Dots */}
+        {hasMany && (
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+            {imgs.map((_, ii) => (
+              <Motion.button
+                key={ii}
+                onClick={() => setImgIdx(ii)}
+                animate={{ scale: ii === imgIdx ? 1.4 : 1, opacity: ii === imgIdx ? 1 : 0.35 }}
+                transition={{ duration: 0.2 }}
+                className="h-1.5 w-1.5 rounded-full bg-white border-none p-0 cursor-pointer"
+                aria-label={`Image ${ii + 1}`}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Image counter */}
+        {hasMany && (
+          <span className="absolute bottom-3 right-3 rounded-full bg-black/45 px-2.5 py-0.5 text-[10px] text-white/70 backdrop-blur-sm">
+            {imgIdx + 1} / {imgs.length}
+          </span>
+        )}
+      </div>
+
+      {/* Card body */}
+      <AnimatePresence mode="wait">
+        <Motion.div
+          key={`body-${index}`}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="p-5 md:p-6"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="font-heading text-lg font-bold text-white">{proj.title}</h3>
+            <a
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-slate-400 hover:text-white transition-colors shrink-0"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
+                <polyline points="15 3 21 3 21 9" />
+                <line x1="10" y1="14" x2="21" y2="3" />
+              </svg>
+            </a>
+          </div>
+
+          <p className="mt-2 text-sm text-slate-400 leading-relaxed line-clamp-3">
+            {proj.description}
+          </p>
+
+          <div className="mt-4 flex items-center justify-between">
+            <a
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-xl border border-white/12 px-4 py-2 text-xs font-semibold text-white hover:bg-white/5 transition-colors"
+            >
+              View project
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+            </a>
+            {proj.tag && (
+              <span className="rounded bg-white/5 px-2 py-1 text-[10px] font-semibold text-slate-300 tracking-wider uppercase">
+                {proj.tag}
+              </span>
+            )}
+          </div>
+        </Motion.div>
+      </AnimatePresence>
+    </Motion.div>
+  )
+}
+
+// ── Main page ──────────────────────────────────────────────────────
 export default function HomePage({ now, portfolioData }) {
   const navigate = useNavigate()
   const { profile, stats, socials, technicalMastery, projectCards } = portfolioData
@@ -75,41 +223,28 @@ export default function HomePage({ now, portfolioData }) {
 
       {/* ══════════════════════════════════════════════════
           HERO SECTION
-          Layout: [Profile Card]  |  [Hero Text + Stats]
       ══════════════════════════════════════════════════ */}
       <section className="flex flex-col md:grid md:grid-cols-[260px_1fr] lg:grid-cols-[300px_1fr] xl:grid-cols-[320px_1fr] gap-6 lg:gap-8 items-stretch">
 
-        {/* ── LEFT: Profile Card ── */}
+        {/* LEFT: Profile Card */}
         <Motion.div {...fadeUp(0.05)} className="relative overflow-hidden rounded-[2rem] border border-white/8 bg-white/[0.035] backdrop-blur-md shadow-[0_18px_48px_rgba(2,6,23,0.22)] flex flex-col">
-
-          {/* Glow */}
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(79,142,247,0.12),transparent_65%)]" />
-
-          {/* Profile image */}
-          <div className="relative mx-auto mt-8 h-44 w-44 lg:h-52 lg:w-52 overflow-hidden rounded-[1.75rem] border border-white/12 bg-cover bg-center shadow-2xl"
-            style={{ backgroundImage: `url(${profileImage})` }}
+          <div
+            className="relative mx-auto mt-8 h-44 w-44 lg:h-52 lg:w-52 overflow-hidden rounded-[1.75rem] border border-white/12 bg-cover bg-center shadow-2xl"
+            style={{ backgroundImage: `url(${profile?.avatarUrl ? getImageUrl(profile.avatarUrl) : profileImage})` }}
           >
-            {/* Inner glow overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-[#080e1c]/60 to-transparent" />
           </div>
-
-          {/* Info */}
           <div className="relative flex flex-col items-center px-6 pb-6 pt-5 flex-1">
             <h2 className="font-heading text-xl lg:text-2xl font-bold text-white text-center leading-tight">{profile.name}</h2>
             <p className="mt-1 text-sm text-slate-400 text-center">{profile.title}</p>
-
-            {/* Location pill */}
             <div className="mt-3 flex items-center gap-1.5 rounded-full border border-white/8 bg-white/[0.04] px-3 py-1">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-400 shrink-0">
                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" /><circle cx="12" cy="10" r="3" />
               </svg>
               <span className="text-[11px] font-medium text-slate-400">{profile.location}</span>
             </div>
-
-            {/* Divider */}
             <div className="my-5 h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-
-            {/* Social icons */}
             <div className="flex items-center gap-2.5">
               {socials.map((s) => (
                 <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" title={s.label}
@@ -118,8 +253,6 @@ export default function HomePage({ now, portfolioData }) {
                 </a>
               ))}
             </div>
-
-            {/* CTA */}
             <Motion.a
               href="/contact"
               whileHover={{ scale: 1.02 }}
@@ -134,30 +267,20 @@ export default function HomePage({ now, portfolioData }) {
           </div>
         </Motion.div>
 
-        {/* ── RIGHT: Hero Text + Stats + CTAs ── */}
+        {/* RIGHT: Hero Text + Stats */}
         <div className="relative overflow-hidden rounded-[2rem] border border-white/6 bg-gradient-to-br from-[rgba(79,142,247,0.1)] to-[rgba(129,140,248,0.05)] backdrop-blur-md shadow-[0_8px_32px_rgba(0,0,0,0.2)] flex flex-col justify-center px-8 py-10 lg:px-12 lg:py-12">
-
-          {/* Background radial glow */}
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(79,142,247,0.18),transparent_60%)]" />
           <div className="pointer-events-none absolute bottom-0 left-0 h-64 w-64 rounded-full bg-indigo-600/10 blur-3xl" />
-
           <div className="relative">
-            {/* Date eyebrow */}
             <Motion.p {...fadeUp(0.1)} className="text-xs font-semibold tracking-[0.3em] text-blue-400/70 uppercase lg:text-sm">
               {currentWeekday} · {currentDay} {currentMonth}
             </Motion.p>
-
-            {/* Big headline */}
             <Motion.h1 {...fadeUp(0.15)} className="mt-4 font-heading text-4xl font-extrabold leading-[1.1] text-white lg:text-5xl xl:text-6xl">
               {profile.headline}
             </Motion.h1>
-
-            {/* Subtext */}
             <Motion.p {...fadeUp(0.2)} className="mt-5 max-w-xl text-sm leading-7 text-slate-400 lg:text-base lg:leading-8">
               {profile.subtext}
             </Motion.p>
-
-            {/* Stats row */}
             <Motion.div {...fadeUp(0.25)} className="mt-8 flex flex-wrap items-center gap-6 lg:gap-10">
               {stats.map((s) => (
                 <div key={s.label} className="flex flex-col">
@@ -165,13 +288,8 @@ export default function HomePage({ now, portfolioData }) {
                   <span className="mt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 whitespace-pre-line leading-4">{s.label}</span>
                 </div>
               ))}
-              {/* Vertical dividers between stats */}
             </Motion.div>
-
-            {/* Divider */}
             <Motion.div {...fadeUp(0.28)} className="mt-8 h-px w-full bg-gradient-to-r from-white/10 via-white/6 to-transparent" />
-
-            {/* CTA buttons */}
             <Motion.div {...fadeUp(0.32)} className="mt-7 flex flex-wrap items-center gap-3">
               <Motion.a
                 href="/contact"
@@ -184,7 +302,6 @@ export default function HomePage({ now, portfolioData }) {
                 </svg>
                 Let's Talk
               </Motion.a>
-
               <Motion.a
                 href="/projects"
                 whileHover={{ scale: 1.03, backgroundColor: 'rgba(255,255,255,0.07)' }}
@@ -201,38 +318,36 @@ export default function HomePage({ now, portfolioData }) {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════
-          SCROLL REVEAL SECTIONS 
-      ══════════════════════════════════════════════════ */}
-
-      {/* Rate This Portfolio Button */}
+      {/* Rate This Portfolio */}
       <Motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-50px" }}
+        viewport={{ once: true, margin: '-50px' }}
         transition={{ duration: 0.5 }}
         className="mt-6 md:mt-12 flex justify-center"
       >
         <button
           onClick={() => {
-            navigate('/contact');
+            navigate('/contact')
             setTimeout(() => {
-              document.getElementById('feedback-section')?.scrollIntoView({ behavior: 'smooth' });
-            }, 300);
+              document.getElementById('feedback-section')?.scrollIntoView({ behavior: 'smooth' })
+            }, 300)
           }}
           className="group relative flex items-center gap-2 md:gap-3 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3 text-[11px] md:px-8 md:py-4 md:text-sm font-bold tracking-widest text-white uppercase shadow-[0_0_40px_rgba(79,142,247,0.3)] transition-all duration-300 hover:scale-105 hover:shadow-[0_0_60px_rgba(79,142,247,0.5)] lg:text-base overflow-hidden"
         >
-          <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.2)_50%,transparent_75%,transparent_100%)] bg-[length:250%_250%,100%_100%] bg-[position:200%_0,0_0] bg-no-repeat transition-[background-position_0s_ease] group-hover:bg-[position:-200%_0,0_0] group-hover:duration-[1500ms]"></div>
+          <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.2)_50%,transparent_75%,transparent_100%)] bg-[length:250%_250%,100%_100%] bg-[position:200%_0,0_0] bg-no-repeat transition-[background-position_0s_ease] group-hover:bg-[position:-200%_0,0_0] group-hover:duration-[1500ms]" />
           <span className="text-lg md:text-xl transition-transform group-hover:rotate-12">⭐</span>
           <span className="relative z-10">Rate This Portfolio</span>
         </button>
       </Motion.div>
 
-      {/* Featured Work Section */}
+      {/* ══════════════════════════════════════════════════
+          FEATURED WORK
+      ══════════════════════════════════════════════════ */}
       <Motion.section
         initial={{ opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-50px" }}
+        viewport={{ once: true, margin: '-50px' }}
         transition={{ duration: 0.6 }}
         className="mt-10 md:mt-24 flex flex-col gap-6"
       >
@@ -250,46 +365,19 @@ export default function HomePage({ now, portfolioData }) {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Stacked project cards — one per row */}
+        <div className="flex flex-col gap-5">
           {featuredProjects.map((proj, idx) => (
-            <Motion.div
-              key={idx}
-              whileHover={{ y: -5 }}
-              className="flex flex-col overflow-hidden rounded-[1.5rem] border border-white/8 bg-[#0b1120] shadow-lg transition-colors hover:bg-white/[0.04]"
-            >
-              <div className="h-48 w-full bg-cover bg-center border-b border-white/8" style={{ backgroundImage: `url(${getImageUrl(proj.images && proj.images[0]) || projectImages[idx % projectImages.length]})` }} />
-              {proj.images && proj.images.length > 1 && (
-                <div className="flex gap-2 overflow-x-auto px-5 py-3 bg-[#060a13] border-b border-white/5 snap-x" style={{ scrollbarWidth: 'none' }}>
-                  {proj.images.slice(1).map((imgUrl, imgIdx) => (
-                    <div key={imgIdx} className="h-12 w-16 shrink-0 rounded bg-cover bg-center border border-white/10 snap-start hover:border-white/30 transition-colors" style={{ backgroundImage: `url(${getImageUrl(imgUrl)})` }} />
-                  ))}
-                </div>
-              )}
-              <div className="p-6 flex flex-col flex-1">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-heading text-lg font-bold text-white">{proj.title}</h3>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-                </div>
-                <p className="mt-3 text-sm text-slate-400 leading-relaxed flex-1">{proj.description}</p>
-                <div className="mt-5 flex flex-wrap gap-2">
-                  {proj.tag && (
-                    <span className="rounded bg-white/5 px-2 py-1 text-[10px] font-semibold text-slate-300 tracking-wider uppercase">{proj.tag}</span>
-                  )}
-                </div>
-                <div className="mt-6 flex items-center gap-4 text-xs font-semibold text-white">
-                  <a href={proj.link && proj.link !== '#' ? (proj.link.match(/^https?:\/\//i) ? proj.link : `https://${proj.link}`) : "#"} target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors">View Project</a>
-                </div>
-              </div>
-            </Motion.div>
+            <ProjectCard key={proj.id ?? idx} proj={proj} index={idx} />
           ))}
         </div>
       </Motion.section>
 
-      {/* Technical Mastery Section */}
+      {/* Technical Mastery */}
       <Motion.section
         initial={{ opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-50px" }}
+        viewport={{ once: true, margin: '-50px' }}
         transition={{ duration: 0.6 }}
         className="mt-20 md:mt-28 flex flex-col items-center gap-8"
       >
@@ -297,7 +385,6 @@ export default function HomePage({ now, portfolioData }) {
           <h2 className="font-heading text-2xl font-bold text-white md:text-3xl">Technical Mastery</h2>
           <p className="mt-2 text-sm text-slate-400">A comprehensive overview of my technical stack and specialized tools.</p>
         </div>
-
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
           {(technicalMastery || []).map((cat, idx) => (
             <div key={idx} className="rounded-[1.5rem] border border-white/8 bg-[#0b1120] p-6 shadow-lg">
@@ -318,11 +405,11 @@ export default function HomePage({ now, portfolioData }) {
         </div>
       </Motion.section>
 
-      {/* CTA Section */}
+      {/* CTA */}
       <Motion.section
         initial={{ opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-50px" }}
+        viewport={{ once: true, margin: '-50px' }}
         transition={{ duration: 0.6 }}
         className="mt-24 mb-12 flex flex-col items-center text-center gap-6"
       >
@@ -335,7 +422,7 @@ export default function HomePage({ now, portfolioData }) {
 
       {/* Footer */}
       <footer className="mt-4 border-t border-white/10 pt-8 pb-4 flex flex-col md:flex-row items-center justify-between gap-4 text-[10px] font-medium text-slate-500 uppercase tracking-wide">
-        <p>Dev.Core | &copy; 2026 Developer Portfolio... </p>
+        <p>Dev.Core | &copy; 2026 Developer Portfolio...</p>
         <div className="flex gap-6">
           <a href="https://github.com/Teerath-Pant" target="_blank" rel="noopener noreferrer" className="hover:text-slate-300 transition-colors">GitHub</a>
           <a href="https://www.linkedin.com/in/teerath-pant-49461033b/" target="_blank" rel="noopener noreferrer" className="hover:text-slate-300 transition-colors">LinkedIn</a>

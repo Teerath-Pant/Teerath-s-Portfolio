@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { motion as Motion, AnimatePresence } from 'framer-motion'
 import AdminPanel from './components/AdminPanel.jsx'
+import { API_URL } from './lib/api.js'
 
-const PASSWORD = 'Lepanga@02'
 const SESSION_KEY = 'admin_auth'
 
 function LockScreen({ onUnlock }) {
@@ -10,12 +10,28 @@ function LockScreen({ onUnlock }) {
   const [err, setErr] = useState(false)
   const [shake, setShake] = useState(false)
 
-  function submit(e) {
+  async function submit(e) {
     e.preventDefault()
-    if (pw === PASSWORD) {
-      sessionStorage.setItem(SESSION_KEY, '1')
-      onUnlock()
-    } else {
+    try {
+      const res = await fetch(`${API_URL}/api/admin/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ password: pw })
+      })
+
+      if (res.ok) {
+        sessionStorage.setItem(SESSION_KEY, '1')
+        onUnlock()
+      } else {
+        setErr(true)
+        setShake(true)
+        setTimeout(() => setShake(false), 500)
+        setPw('')
+      }
+    } catch (error) {
+      console.error('Login error:', error)
       setErr(true)
       setShake(true)
       setTimeout(() => setShake(false), 500)

@@ -1,3 +1,13 @@
+import { API_URL } from '../lib/api.js'
+
+const getImageUrl = (imgUrl) => {
+  if (!imgUrl) return ''
+  if (imgUrl.startsWith('http://') || imgUrl.startsWith('https://') || imgUrl.startsWith('data:')) {
+    return imgUrl
+  }
+  return `${API_URL}${imgUrl}`
+}
+
 function Field({ label, value, onChange, type = 'text', placeholder = '', rows }) {
   return (
     <div style={{ marginBottom: '1rem' }}>
@@ -22,6 +32,59 @@ export default function ProfileTab({ data, setData }) {
 
   return (
     <div style={{ maxWidth: '720px', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+
+      {/* Profile Picture */}
+      <div className="card" style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+        <div style={{ position: 'relative', width: '90px', height: '90px', borderRadius: '50%', overflow: 'hidden', border: '2px solid var(--border)', background: 'var(--surface2)', flexShrink: 0 }}>
+          {p.avatarUrl ? (
+            <img src={getImageUrl(p.avatarUrl)} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ) : (
+            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem', color: 'var(--muted)' }}>👤</div>
+          )}
+        </div>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+          <label className="label" style={{ margin: 0 }}>Profile Picture</label>
+          <span style={{ fontSize: '0.72rem', color: 'var(--muted)' }}>Upload an image for the home page and sidebar.</span>
+          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.2rem' }}>
+            <input 
+              type="file" 
+              accept="image/*" 
+              style={{ display: 'none' }} 
+              id="avatar-upload" 
+              onChange={async e => {
+                const file = e.target.files?.[0]
+                if (!file) return
+                const reader = new FileReader()
+                const dataUrl = await new Promise((res, rej) => {
+                  reader.onload = () => res(reader.result)
+                  reader.onerror = () => rej(reader.error)
+                  reader.readAsDataURL(file)
+                })
+                if (typeof dataUrl === 'string') {
+                  set('avatarUrl', dataUrl)
+                }
+                e.target.value = ''
+              }}
+            />
+            <button 
+              onClick={() => document.getElementById('avatar-upload').click()} 
+              className="btn btn-primary" 
+              style={{ fontSize: '0.75rem', padding: '0.4rem 0.8rem' }}
+            >
+              Upload Image
+            </button>
+            {p.avatarUrl && (
+              <button 
+                onClick={() => set('avatarUrl', '')} 
+                className="btn btn-ghost" 
+                style={{ fontSize: '0.75rem', color: 'var(--danger)', padding: '0.4rem 0.8rem' }}
+              >
+                Remove
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* Identity */}
       <div className="card">

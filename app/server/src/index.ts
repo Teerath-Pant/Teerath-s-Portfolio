@@ -7,6 +7,7 @@ import { eq } from 'drizzle-orm'
 import * as schema from './db/schema'
 import fs from 'fs'
 import path from 'path'
+import { hashPassword, verifyPassword } from './db/auth'
 
 config({ path: path.resolve(__dirname, '../.env') })
 
@@ -97,6 +98,40 @@ function sanitizePortfolioPayload(data: any) {
 app.get('/', (_req, res) => {
   res.json({ ok: true, message: 'Backend is running 🚀' })
 })
+
+// ─────────────────────────────────────────────
+// ADMIN LOGIN
+// POST /api/admin/login
+// ─────────────────────────────────────────────
+app.post('/api/admin/login', async (req, res) => {
+  try {
+    const { password } = req.body
+    if (!password) {
+      return res.status(400).json({ ok: false, error: 'Password is required' })
+    }
+
+    // Find the admin user with username 'admin'
+    const adminRows = await db.select().from(schema.admins)
+      .where(eq(schema.admins.username, 'admin'))
+      .limit(1)
+
+    if (adminRows.length === 0) {
+      return res.status(401).json({ ok: false, error: 'No admin user configured' })
+    }
+
+    const admin = adminRows[0]
+    const isMatch = verifyPassword(password, admin.password)
+    if (isMatch) {
+      return res.json({ ok: true })
+    } else {
+      return res.status(401).json({ ok: false, error: 'Incorrect password' })
+    }
+  } catch (err) {
+    console.error('Login error:', err)
+    res.status(500).json({ ok: false, error: 'Failed to verify password' })
+  }
+})
+
 
 // ─────────────────────────────────────────────
 // FILE UPLOAD
@@ -535,7 +570,28 @@ app.delete('/api/analytics', async (_req, res) => {
 // ─────────────────────────────────────────────
 // START SERVER
 // ─────────────────────────────────────────────
-app.listen(PORT, () => {
-  console.log(`✅ Server running on port ${PORT}`)
-})
+async function seedAdmin() {
+  try {
+    const existingAdmins = await db.select().from(schema.admins).limit(1)
+    if (existingAdmins.length === 0) {
+      console.log('Seeding default admin user...')
+      const defaultPassword = 'Lepanga@02'
+      const hashedPassword = hashPassword(defaultPassword)
+      await db.insert(schema.admins).values({
+        username: 'admin',
+        password: hashedPassword,
+      })
+      console.log('✅ Default admin user seeded successfully.')
+    } else {
+      console.log('Admin user check: Admin accounts already exist in DB.')
+    }
+  } catch (err) {
+    console.error('Failed to seed default admin:', err)
+  }
+}
 
+seedAdmin().then(() => {
+  app.listen(PORT, () => {
+    console.log(`✅ Server running on port ${PORT}`)
+  })
+})

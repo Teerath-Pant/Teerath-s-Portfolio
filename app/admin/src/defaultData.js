@@ -11,6 +11,7 @@ export const defaultData = {
     subtext:
       'Passionate about creating intuitive and engaging user experiences. Specializing in transforming ideas into beautifully crafted digital products.',
     availableForWork: true,
+    avatarUrl: '',
   },
 
   stats: [
