@@ -124,7 +124,7 @@ export default function ContactPage({ portfolioData, trackContactClick }) {
               <a
                 key={link.label}
                 href={link.href}
-                target="_blank"
+                target={link.href.startsWith('mailto:') ? undefined : '_blank'}
                 rel="noopener noreferrer"
                 onClick={() => trackContactClick?.(link.platform)}
                 className={`flex items-center gap-4 rounded-xl border px-4 py-3.5 md:px-5 md:py-4 transition-all duration-200 hover:scale-[1.02] hover:brightness-110 ${style.bg}`}

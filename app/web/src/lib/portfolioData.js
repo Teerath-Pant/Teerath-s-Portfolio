@@ -9,6 +9,14 @@ function isLegacyUploadImage(value) {
   )
 }
 
+// Admin may type "me@mail.com" or "github.com/me". Without a scheme the browser treats
+// that as a relative URL (a broken page on this site), so add mailto: / https:// here.
+function normalizeHref(href) {
+  const h = typeof href === 'string' ? href.trim() : ''
+  if (!h || h.startsWith('/') || h.startsWith('#') || /^[a-z][a-z0-9+.-]*:/i.test(h)) return h
+  return h.includes('@') ? `mailto:${h}` : `https://${h}`
+}
+
 function sanitizeProjectCards(projectCards) {
   if (!Array.isArray(projectCards)) return staticPortfolioData.projectCards || []
 
@@ -36,7 +44,8 @@ export function normalizePortfolioData(data = {}) {
     skillLevels: Array.isArray(data.skillLevels) ? data.skillLevels : (staticPortfolioData.skillLevels || []),
     technicalMastery: Array.isArray(data.technicalMastery) ? data.technicalMastery : (staticPortfolioData.technicalMastery || []),
     futureEnhancements: Array.isArray(data.futureEnhancements) ? data.futureEnhancements : (staticPortfolioData.futureEnhancements || []),
-    socials: Array.isArray(data.socials) ? data.socials : (staticPortfolioData.socials || []),
+    socials: (Array.isArray(data.socials) ? data.socials : (staticPortfolioData.socials || []))
+      .map((s) => ({ ...s, href: normalizeHref(s?.href) })),
     stats: Array.isArray(data.stats) ? data.stats : (staticPortfolioData.stats || []),
   }
 }
