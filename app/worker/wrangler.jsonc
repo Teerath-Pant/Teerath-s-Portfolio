@@ -1,0 +1,33 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "portfolio-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-01",
+  // Public URL: https://portfolio-api.<your-subdomain>.workers.dev. Per-version preview URLs are not needed.
+  "workers_dev": true,
+  "preview_urls": false,
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "portfolio-db",
+      // Id printed by `wrangler d1 create portfolio-db`. Not a secret.
+      "database_id": "80edfef2-207c-47b9-8cae-bb7a73c79787",
+      "migrations_dir": "migrations"
+    }
+  ],
+  // Uploaded images (binary, up to 25 MiB each on KV). Id printed by `wrangler kv namespace create IMAGES`.
+  // Not a secret. Do NOT add "remote": true here, it would make `wrangler dev` use production data.
+  "kv_namespaces": [
+    { "binding": "IMAGES", "id": "a1a7da588ae2453899fdb66ae0b1bc22" }
+  ],
+  // Per-IP throttles. namespace_id is any unique integer string in your account; period must be 10 or 60.
+  "ratelimits": [
+    { "name": "LOGIN_LIMITER", "namespace_id": "1001", "simple": { "limit": 5, "period": 60 } },
+    { "name": "FEEDBACK_LIMITER", "namespace_id": "1002", "simple": { "limit": 3, "period": 60 } },
+    { "name": "TRACK_LIMITER", "namespace_id": "1003", "simple": { "limit": 30, "period": 60 } }
+  ],
+  // Non-secret config. Secrets (ADMIN_PASSWORD_HASH, AUTH_SECRET) are set with `wrangler secret put`.
+  "vars": {
+    "ALLOWED_ORIGINS": "https://teerath-portfolio.vercel.app,https://teerath-admin.vercel.app,http://localhost:5000,http://localhost:5001"
+  }
+}
