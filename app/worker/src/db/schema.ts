@@ -102,6 +102,22 @@ export const feedback = sqliteTable(
   (t) => [index('feedback_date_idx').on(t.date)],
 )
 
+// Messages sent through the public contact form
+export const contactMessages = sqliteTable(
+  'contact_messages',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    name: text('name').notNull(),
+    email: text('email').notNull(),
+    message: text('message').notNull(),
+    read: integer('read', { mode: 'boolean' }).notNull().default(false),
+    notified: text('notified'), // result of the email to the owner: 'sent' | 'failed: ...' | 'skipped: ...'
+    confirmation: text('confirmation'), // result of the confirmation email to the visitor (same values)
+    createdAt: createdAt(),
+  },
+  (t) => [index('contact_messages_created_idx').on(t.createdAt)],
+)
+
 // Analytics
 export const visits = sqliteTable(
   'visits',

@@ -3,6 +3,8 @@
   "name": "portfolio-api",
   "main": "src/index.ts",
   "compatibility_date": "2026-11-01",
+  // worker-mailer (SMTP over cloudflare:sockets) needs Node compatibility.
+  "compatibility_flags": ["nodejs_compat"],
   // Public URL: https://portfolio-api.<your-subdomain>.workers.dev. Per-version preview URLs are not needed.
   "workers_dev": true,
   "preview_urls": false,
@@ -24,10 +26,22 @@
   "ratelimits": [
     { "name": "LOGIN_LIMITER", "namespace_id": "1001", "simple": { "limit": 5, "period": 60 } },
     { "name": "FEEDBACK_LIMITER", "namespace_id": "1002", "simple": { "limit": 3, "period": 60 } },
-    { "name": "TRACK_LIMITER", "namespace_id": "1003", "simple": { "limit": 30, "period": 60 } }
+    { "name": "TRACK_LIMITER", "namespace_id": "1003", "simple": { "limit": 30, "period": 60 } },
+    { "name": "CONTACT_LIMITER", "namespace_id": "1004", "simple": { "limit": 3, "period": 60 } }
   ],
-  // Non-secret config. Secrets (ADMIN_PASSWORD_HASH, AUTH_SECRET) are set with `wrangler secret put`.
+  // Non-secret config. Secrets (ADMIN_PASSWORD_HASH, AUTH_SECRET, SMTP_USER, SMTP_PASS, optionally RESEND_API_KEY) are set with `wrangler secret put`.
   "vars": {
+    // Where new contact-form messages are emailed. Must be the email address of your Resend account
+    // while you send from onboarding@resend.dev. It is already public on the portfolio's Contact page.
+    "CONTACT_TO_EMAIL": "teerathpant2@gmail.com",
+    // Admin panel link shown in that email.
+    "ADMIN_URL": "https://teerath-admin.vercel.app",
+    // Link back to the site in the visitor confirmation email, and the sender name shown to them.
+    "SITE_URL": "https://teerath-portfolio.vercel.app",
+    "CONTACT_FROM_NAME": "Teerath Pant",
+    // SMTP server (Gmail defaults). Credentials SMTP_USER / SMTP_PASS are secrets: wrangler secret put.
+    "SMTP_HOST": "smtp.gmail.com",
+    "SMTP_PORT": "465",
     "ALLOWED_ORIGINS": "https://teerath-portfolio.vercel.app,https://teerath-admin.vercel.app,http://localhost:5000,http://localhost:5001"
   }
 }

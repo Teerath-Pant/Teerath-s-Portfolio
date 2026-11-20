@@ -47,6 +47,7 @@ export function normalizePortfolioData(data = {}) {
     socials: (Array.isArray(data.socials) ? data.socials : (staticPortfolioData.socials || []))
       .map((s) => ({ ...s, href: normalizeHref(s?.href) })),
     stats: Array.isArray(data.stats) ? data.stats : (staticPortfolioData.stats || []),
+    sectionTitles: data.sectionTitles && typeof data.sectionTitles === 'object' ? data.sectionTitles : {},
   }
 }
 

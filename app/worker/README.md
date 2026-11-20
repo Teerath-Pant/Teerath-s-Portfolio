@@ -1,4 +1,4 @@
-# Portfolio API (Cloudflare Worker + D1 + KV)
+﻿# Portfolio API (Cloudflare Worker + D1 + KV)
 
 Backend for the portfolio website (`app/web`) and the admin panel (`app/admin`).
 Both frontends stay on Vercel; this Worker replaces the old Express/Postgres server in `app/server`.
@@ -51,6 +51,7 @@ Content tables keep admin ordering in a `position` column.
 | `portfolio_socials` | position, label, href, platform |
 | `portfolio_stats` | position, value, label |
 | `feedback` | rating (1-5), comment, name, date, created_at; index on date |
+| `contact_messages` | name, email, message, read, notified and confirmation (email results: `sent`, `failed: ...`, `skipped: ...`), created_at; index on created_at |
 | `visits` | date, hashed_ip, session, country, page, created_at; index on date |
 | `events` | type, project, platform, session, date, created_at; index on date |
 | `settings` | key (PK), value, updated_at. Keys: `ignoredIpHash`, `portfolioVersion` |
@@ -73,6 +74,7 @@ All responses are JSON `{ ok: boolean, ... }`. Errors: `{ ok: false, error: "...
 | `GET /api/load` | whole portfolio. `{ ok, data }`, `data` is `null` until the first save (frontends then use their built-in defaults). Sends `ETag` and `Cache-Control: no-cache`; a matching `If-None-Match` returns `304` after one DB read |
 | `POST /api/admin/login` | `{ password }` returns `{ ok, token }`. Token is valid 12 hours. 5 attempts per minute per IP |
 | `POST /api/feedback` | `{ rating: 1-5, comment?: <=2000, name?: <=100 }`. 3 per minute per IP |
+| `POST /api/contact` | `{ name <=100, email (valid, <=200), message <=5000 }`. Saves the message, then emails the owner (see below). 3 per minute per IP |
 | `POST /api/track` | `{ event: "pageview" \| "project_view" \| "contact_click", page?, session?, project?, platform? }`. 30 per minute per IP |
 | `GET /api/img/:id` | image bytes, `Cache-Control: public, max-age=31536000, immutable` |
 
@@ -84,6 +86,9 @@ All responses are JSON `{ ok: boolean, ... }`. Errors: `{ ok: false, error: "...
 | `POST /api/upload` | raw image bytes as body. PNG/JPEG/GIF/WebP only (checked from the file's first bytes, SVG is refused), max 10 MB. Returns `{ ok, url: "/api/img/<id>" }` |
 | `GET /api/feedback` | newest 500, `no-store` |
 | `DELETE /api/feedback` | delete all |
+| `GET /api/contact` | newest 200 contact messages, `no-store` |
+| `POST /api/contact/:id/read` | `{ read: boolean }` |
+| `DELETE /api/contact/:id` | delete one message |
 | `GET /api/analytics?range=today\|7d\|all` | aggregated in SQL, `no-store` |
 | `POST /api/analytics/ignore-self` | `{ action: "ignore" \| "allow" }` |
 | `DELETE /api/analytics` | delete all visits and events |
@@ -97,7 +102,11 @@ All responses are JSON `{ ok: boolean, ... }`. Errors: `{ ok: false, error: "...
 | `AUTH_SECRET` | secret (signs tokens, keys the IP hash; use a long random string) | prod: `wrangler secret put`; local: `.dev.vars` |
 | `DB` | D1 binding | `wrangler.jsonc` |
 | `IMAGES` | KV binding | `wrangler.jsonc` |
-| `LOGIN_LIMITER`, `FEEDBACK_LIMITER`, `TRACK_LIMITER` | rate limit bindings | `wrangler.jsonc` `ratelimits` |
+| `LOGIN_LIMITER`, `FEEDBACK_LIMITER`, `TRACK_LIMITER`, `CONTACT_LIMITER` | rate limit bindings | `wrangler.jsonc` `ratelimits` |
+| `CONTACT_TO_EMAIL` | plain variable: where contact messages are emailed | `wrangler.jsonc` `vars` |
+| `SMTP_USER`, `SMTP_PASS` | secrets: SMTP login (Gmail app password). With both set, SMTP sends all contact mail | prod: `wrangler secret put` |
+| `SMTP_HOST`, `SMTP_PORT`, `SITE_URL`, `ADMIN_URL`, `CONTACT_FROM_NAME` | plain variables for the contact emails | `wrangler.jsonc` `vars` |
+| `RESEND_API_KEY` | secret, optional fallback when SMTP is not set. Without any mail setup, messages are still saved and shown in the admin panel, just not emailed | prod: `wrangler secret put` |
 
 Frontends (Vercel, build-time variables):
 
@@ -163,6 +172,49 @@ node scripts/smoke.mjs
 Remove-Item Env:ADMIN_PASSWORD
 ```
 
+## Contact form and email
+
+A visitor's message is saved in D1 first (shown in the admin panel under **Messages**), then emailed after the response is sent, so a slow or failing mail service never fails the visitor's submit. The outcome is stored on the message (`notified` = mail to you, `confirmation` = mail to the visitor) and shown as badges in the admin panel.
+
+Two mail providers are supported; SMTP wins when its credentials exist:
+
+| | Mail to you | Confirmation to the visitor |
+|---|---|---|
+| **SMTP** (`SMTP_USER` + `SMTP_PASS` set), e.g. Gmail | yes | yes, no domain needed |
+| **Resend** (`RESEND_API_KEY` set, no SMTP) | yes, only to the Resend account's own address while sending from `onboarding@resend.dev` | no |
+
+### SMTP setup (Gmail)
+
+1. Use a **separate Gmail account just for sending** (not your main one). The contact form is public: if it were ever abused, only this throwaway mailbox is at risk.
+2. In that account turn on 2-Step Verification, then create an app password (Google Account, Security, App passwords). Google: app passwords need 2-Step Verification, are revoked when the account password changes, and are "not recommended" in general; treat the password as full access to that mailbox.
+3. Set the secrets (type the value at the prompt, never put it in the command):
+   ```bash
+   npx wrangler secret put SMTP_USER   # the sending Gmail address
+   npx wrangler secret put SMTP_PASS   # the app password, without spaces
+   ```
+4. `npx wrangler deploy`. Defaults are `smtp.gmail.com` port `465` (implicit TLS), set in `wrangler.jsonc` vars (`SMTP_HOST`, `SMTP_PORT`).
+5. Send a test message from the site. If a badge says `failed`, hover it: the stored text is the server's reply (credentials are never stored).
+
+### What gets sent
+
+- **To you** (`CONTACT_TO_EMAIL`): branded HTML email with the visitor's name, email, time and message, a Reply button, and `Reply-To` set to the visitor.
+- **To the visitor:** short "Thanks, <first name>! I received your message" email. It contains **none of the visitor's message text** (only their first name), `Reply-To` is your real inbox, so a reply reaches you even though SMTP sends from the separate account.
+- Both have a plain-text part. Everything a visitor typed is HTML-escaped.
+- Edit the look in `src/emailTemplate.ts` and run `npm run preview-email` to write `email-preview.html` and `email-preview-visitor.html` (git-ignored) without sending anything.
+
+### Abuse protection
+
+- Per IP: 3 messages per minute (`CONTACT_LIMITER`).
+- At most 30 messages per UTC day trigger emails; later ones are still saved, just not emailed.
+- A visitor address gets at most one confirmation per 24 hours, so the form cannot be used to keep mailing someone else's address.
+
+### Limits and unknowns
+
+- Resend free plan, per its pricing page: 3,000 emails per month and 100 per day. Check [resend.com/pricing](https://resend.com/pricing) for the current numbers and whether signup asks for a card; the docs I read do not say.
+- Gmail's own daily sending limit for personal accounts was not stated in the pages checked. Keep volume low.
+- SMTP uses Workers TCP sockets (`cloudflare:sockets`, port 25 is blocked, 465/587 are not listed as blocked). Cloudflare's page does not say whether the Free plan allows them; this is confirmed only by a real send after deploy.
+- SMTP uses the third-party `worker-mailer` package (MIT). It was tested here against a local mock SMTP server, not against real Gmail.
+
 ## Common tasks
 
 - **Change the admin password:** `npm run set-password`, then `npx wrangler secret put ADMIN_PASSWORD_HASH` and paste the new hash. No redeploy needed. Existing tokens stay valid until they expire (12 h); rotate `AUTH_SECRET` to invalidate them at once.
@@ -184,6 +236,7 @@ Remove-Item Env:ADMIN_PASSWORD
 | Admin save says `Images must be uploaded through /api/upload...` | an old `data:` image is in the draft. Re-upload that image |
 | `Worker exceeded CPU time limit` (error 1102) on login | PBKDF2 is the only heavy step (100,000 iterations). It passed on the free plan; if it ever fails, lower the iteration count in `set-password.mjs`, regenerate the hash and update the secret |
 | Error 1027 | the daily request limit was reached (see below) |
+| Message shows `email failed: HTTP 403` / `skipped: email not configured` in admin | `RESEND_API_KEY` missing or wrong, or the Resend account email differs from `CONTACT_TO_EMAIL` (test sender only delivers to the account owner). Messages are never lost, they are in the Messages tab |
 | Uploaded image disappeared | it was unreferenced after a save and older than 1 hour. Re-upload and press Save & Apply |
 
 ## Free-tier limits

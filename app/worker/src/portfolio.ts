@@ -62,6 +62,8 @@ const saveSchema = z.object({
     .optional(),
   socials: z.array(z.object({ label: opt(128), href: opt(1024), platform: opt(64) })).max(50).optional(),
   stats: z.array(z.object({ value: opt(64), label: opt(256) })).max(50).optional(),
+  // Editable card titles on the public site (empty/missing = the site's built-in text).
+  sectionTitles: z.object({ skillLevels: str(100).optional() }).optional(),
 })
 
 // ── helpers ──
@@ -79,6 +81,16 @@ const PARAM_BUDGET = 90
 
 // Content version: a random id rewritten on every save. It is the ETag of /api/load.
 const VERSION_KEY = 'portfolioVersion'
+const TITLES_KEY = 'sectionTitles' // stored as JSON in the settings table (no extra table)
+
+const parseObject = (v: string | null | undefined): Record<string, unknown> => {
+  try {
+    const p = JSON.parse(v ?? '{}')
+    return p && typeof p === 'object' && !Array.isArray(p) ? p : {}
+  } catch {
+    return {}
+  }
+}
 
 // ── GET /api/load (public) ──
 // Cache-Control: no-cache = browsers must revalidate every time, so the admin never edits stale data.
@@ -95,7 +107,7 @@ portfolioRoutes.get('/load', async (c) => {
     if (sent.includes(etag)) return c.body(null, 304)
   }
 
-  const [profile, goals, audience, bio, projects, skills, mastery, future, socials, stats] = await db.batch([
+  const [profile, goals, audience, bio, projects, skills, mastery, future, socials, stats, titles] = await db.batch([
     db.select().from(t.profile).limit(1),
     db.select().from(t.goals).orderBy(t.goals.position, t.goals.id),
     db.select().from(t.audience).orderBy(t.audience.position, t.audience.id),
@@ -106,6 +118,7 @@ portfolioRoutes.get('/load', async (c) => {
     db.select().from(t.futureEnhancements).orderBy(t.futureEnhancements.position, t.futureEnhancements.id),
     db.select().from(t.socials).orderBy(t.socials.position, t.socials.id),
     db.select().from(t.stats).orderBy(t.stats.position, t.stats.id),
+    db.select().from(t.settings).where(eq(t.settings.key, TITLES_KEY)),
   ])
 
   // Nothing saved yet: let each frontend use its own built-in defaults.
@@ -133,6 +146,7 @@ portfolioRoutes.get('/load', async (c) => {
       futureEnhancements: future.map((r) => r.text),
       socials: socials.map(({ id, label, href, platform }) => ({ id, label, href, platform })),
       stats: stats.map(({ id, value, label }) => ({ id, value, label })),
+      sectionTitles: parseObject(titles[0]?.value),
     },
   })
 })
@@ -156,6 +170,16 @@ portfolioRoutes.post('/save', requireAdmin, bodyLimit({ maxSize: 1024 * 1024, on
       .values({ id: 1, ...p })
       .onConflictDoUpdate({ target: t.profile.id, set: { ...p, updatedAt: sql`datetime('now')` } }),
   )
+
+  if (d.sectionTitles) {
+    const value = JSON.stringify(d.sectionTitles)
+    ops.push(
+      db
+        .insert(t.settings)
+        .values({ key: TITLES_KEY, value })
+        .onConflictDoUpdate({ target: t.settings.key, set: { value, updatedAt: sql`datetime('now')` } }),
+    )
+  }
 
   // New content version => every cached /api/load copy is revalidated.
   const version = crypto.randomUUID()

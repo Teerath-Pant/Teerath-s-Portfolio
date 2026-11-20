@@ -8,6 +8,20 @@
       "when": 1795150397936,
       "tag": "0000_motionless_stone_men",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1795168592896,
+      "tag": "0001_legal_doorman",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1795175620175,
+      "tag": "0002_tiny_raza",
+      "breakpoints": true
     }
   ]
 }

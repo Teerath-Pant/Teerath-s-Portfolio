@@ -5,6 +5,7 @@ import type { AppEnv } from './env'
 import { authRoutes } from './auth'
 import { portfolioRoutes } from './portfolio'
 import { feedbackRoutes } from './feedback'
+import { contactRoutes } from './contact'
 import { analyticsRoutes } from './analytics'
 import { imageRoutes } from './images'
 
@@ -26,6 +27,7 @@ app.use(
 app.get('/', (c) => c.json({ ok: true, message: 'Portfolio API' }))
 app.route('/api/admin', authRoutes)
 app.route('/api/feedback', feedbackRoutes)
+app.route('/api/contact', contactRoutes)
 app.route('/api', portfolioRoutes)
 app.route('/api', analyticsRoutes)
 app.route('/api', imageRoutes)

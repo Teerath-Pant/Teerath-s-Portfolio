@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { motion as Motion } from 'framer-motion'
 import Card from '../components/Card'
 import FeedbackForm from '../components/FeedbackForm'
+import { API_URL } from '../lib/api'
 
 const iconMap = {
   email: {
@@ -47,6 +48,35 @@ const iconMap = {
 
 export default function ContactPage({ portfolioData, trackContactClick }) {
   const [sent, setSent] = useState(false)
+  const [form, setForm] = useState({ name: '', email: '', message: '' })
+  const [sending, setSending] = useState(false)
+  const [error, setError] = useState('')
+  const setField = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }))
+
+  async function sendMessage(e) {
+    e.preventDefault()
+    setSending(true)
+    setError('')
+    try {
+      const res = await fetch(`${API_URL}/api/contact`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (res.ok && json.ok) {
+        trackContactClick?.('contact_form')
+        setForm({ name: '', email: '', message: '' })
+        setSent(true)
+      } else {
+        setError(json.error || 'Could not send your message. Please try again.')
+      }
+    } catch {
+      setError('Could not reach the server. Please check your connection and try again.')
+    } finally {
+      setSending(false)
+    }
+  }
   const { socials } = portfolioData
 
   return (
@@ -80,35 +110,45 @@ export default function ContactPage({ portfolioData, trackContactClick }) {
           ) : (
             <form
               className="space-y-4 md:space-y-5"
-              onSubmit={(e) => {
-                e.preventDefault()
-                trackContactClick?.('contact_form')
-                setSent(true)
-              }}
+              onSubmit={sendMessage}
             >
               <input
                 type="text"
+                name="name"
                 placeholder="Your name"
                 required
+                maxLength={100}
+                value={form.name}
+                onChange={setField('name')}
                 className="form-input text-base py-3 md:py-4"
               />
               <input
                 type="email"
+                name="email"
                 placeholder="Email address"
                 required
+                maxLength={200}
+                value={form.email}
+                onChange={setField('email')}
                 className="form-input text-base py-3 md:py-4"
               />
               <textarea
                 rows="5"
+                name="message"
                 placeholder="Tell me about your project..."
                 required
+                maxLength={5000}
+                value={form.message}
+                onChange={setField('message')}
                 className="form-input resize-none text-base py-3 md:py-4"
               />
+              {error && <p className="text-sm text-red-400">{error}</p>}
               <button
                 type="submit"
-                className="w-full rounded-[1.25rem] bg-gradient-to-r from-blue-500 to-indigo-600 px-4 py-3.5 md:py-4 text-sm md:text-base font-semibold tracking-[0.12em] text-white uppercase shadow-lg shadow-blue-500/20 transition-all duration-200 hover:brightness-110 hover:shadow-blue-500/35 active:scale-[0.98]"
+                disabled={sending}
+                className="w-full rounded-[1.25rem] bg-gradient-to-r from-blue-500 to-indigo-600 px-4 py-3.5 md:py-4 text-sm md:text-base font-semibold tracking-[0.12em] text-white uppercase shadow-lg shadow-blue-500/20 transition-all duration-200 hover:brightness-110 hover:shadow-blue-500/35 active:scale-[0.98] disabled:opacity-60"
               >
-                Send Message ↗
+                {sending ? 'Sending...' : 'Send Message ↗'}
               </button>
             </form>
           )}

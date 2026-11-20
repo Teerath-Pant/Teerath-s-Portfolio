@@ -67,12 +67,17 @@ if (!PASSWORD) {
       technicalMastery: [{ title: 'Frontend', icon: 'x', skills: ['React', 'Vite'] }],
       socials: [{ label: 'GitHub', href: 'https://github.com', platform: 'github' }],
       stats: [{ value: '+1', label: 'Test' }],
+      sectionTitles: { skillLevels: 'My Custom Title' },
     }
     r = await call('/api/save', { method: 'POST', body: doc, token })
     check('save valid document', r.status === 200, await r.text())
 
     const got = (await (await call('/api/load')).json()).data
     check('load returns saved data in order', got?.profile?.name === 'Smoke Test' && got.goals.join() === 'g1,g2' && got.projectCards[0].title === 'P1' && got.projectCards[0].images[0] === 'https://example.com/a.png' && got.technicalMastery[0].skills.join() === 'React,Vite', JSON.stringify(got))
+
+    check('load returns saved section title', got?.sectionTitles?.skillLevels === 'My Custom Title', JSON.stringify(got?.sectionTitles))
+    r = await call('/api/save', { method: 'POST', body: { sectionTitles: { skillLevels: 'x'.repeat(101) } }, token })
+    check('section title too long -> 400', r.status === 400)
 
     r = await call('/api/load')
     const etag = r.headers.get('etag')
@@ -106,6 +111,24 @@ if (!PASSWORD) {
     check('admin lists feedback', fb.ok && fb.data.some((f) => f.comment === 'nice' && f.rating === 5), JSON.stringify(fb))
     r = await call('/api/feedback', { method: 'DELETE', token })
     check('admin clears feedback', r.status === 200 && (await (await call('/api/feedback', { token })).json()).data.length === 0)
+
+    // ── contact form (limiter allows 3 per minute, so exactly 3 posts here) ──
+    check('contact bad email -> 400', (await call('/api/contact', { method: 'POST', body: { name: 'A', email: 'nope', message: 'hi' } })).status === 400)
+    check('contact empty message -> 400', (await call('/api/contact', { method: 'POST', body: { name: 'A', email: 'a@b.co', message: '   ' } })).status === 400)
+    check('contact submit', (await call('/api/contact', { method: 'POST', body: { name: 'Smoke Visitor', email: 'visitor@example.com', message: 'Hello <b>there</b>\nline two' } })).status === 200)
+    check('contact list without token -> 401', (await call('/api/contact')).status === 401)
+    let cm
+    for (let i = 0; i < 10 && !cm?.notified; i++) {
+      await new Promise((r) => setTimeout(r, 300)) // email status is written after the response
+      cm = (await (await call('/api/contact', { token })).json()).data?.find((m) => m.name === 'Smoke Visitor')
+    }
+    check('admin sees the message (text stored as-is)', cm?.email === 'visitor@example.com' && cm.message === 'Hello <b>there</b>\nline two' && cm.read === false, JSON.stringify(cm))
+    check('email status recorded', !!cm?.notified, JSON.stringify(cm))
+    console.log('INFO  email status:', cm?.notified)
+    r = await call(`/api/contact/${cm?.id}/read`, { method: 'POST', body: { read: true }, token })
+    check('mark read', r.status === 200 && (await (await call('/api/contact', { token })).json()).data.find((m) => m.id === cm.id).read === true)
+    r = await call(`/api/contact/${cm?.id}`, { method: 'DELETE', token })
+    check('delete message', r.status === 200 && !(await (await call('/api/contact', { token })).json()).data.some((m) => m.id === cm.id))
 
     // ── analytics ──
     check('analytics without token -> 401', (await call('/api/analytics')).status === 401)

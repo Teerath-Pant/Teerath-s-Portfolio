@@ -8,6 +8,7 @@ import SkillsTab from './SkillsTab.jsx'
 import SocialsTab from './SocialsTab.jsx'
 import AnalyticsDashboard from './AnalyticsDashboard.jsx'
 import FeedbackTab from './FeedbackTab.jsx'
+import MessagesTab from './MessagesTab.jsx'
 import { API_URL, authFetch } from '../lib/api.js'
 
 const STORAGE_KEY = 'portfolio_admin_data'
@@ -15,6 +16,7 @@ const STORAGE_KEY = 'portfolio_admin_data'
 const TABS = [
   { id: 'analytics', label: 'Analytics', icon: '📊' },
   { id: 'feedback', label: 'Feedback', icon: '⭐' },
+  { id: 'messages', label: 'Messages', icon: '✉️' },
   { id: 'profile', label: 'Profile', icon: '👤' },
   { id: 'about', label: 'About', icon: '📄' },
   { id: 'projects', label: 'Projects', icon: '🗂️' },
@@ -240,7 +242,8 @@ export default function AdminPanel({ onLogout }) {
             <p style={{ fontSize: '0.72rem', color: 'var(--muted)', marginTop: '0.1rem' }}>
               {activeTab === 'analytics' ? 'Privacy-respecting visitor tracking'
                 : activeTab === 'feedback' ? 'Visitor ratings and comments'
-                  : 'Edit and save to update the live portfolio'}
+                  : activeTab === 'messages' ? 'Messages sent through the contact form'
+                    : 'Edit and save to update the live portfolio'}
             </p>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
@@ -251,7 +254,7 @@ export default function AdminPanel({ onLogout }) {
               </svg>
               Preview
             </a>
-            {activeTab !== 'analytics' && activeTab !== 'feedback' && (
+            {activeTab !== 'analytics' && activeTab !== 'feedback' && activeTab !== 'messages' && (
               <>
                 <button onClick={resetSection} className="btn btn-ghost" style={{ fontSize: '0.75rem' }}>
                   Reset
@@ -285,6 +288,7 @@ export default function AdminPanel({ onLogout }) {
             >
               {activeTab === 'analytics' && <AnalyticsDashboard />}
               {activeTab === 'feedback' && <FeedbackTab />}
+              {activeTab === 'messages' && <MessagesTab />}
               {activeTab === 'profile' && <ProfileTab  {...tabProps} />}
               {activeTab === 'about' && <AboutTab    {...tabProps} />}
               {activeTab === 'projects' && <ProjectsTab {...tabProps} />}

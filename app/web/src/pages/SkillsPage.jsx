@@ -13,7 +13,7 @@ const skillColors = [
 
 export default function SkillsPage({ portfolioData }) {
   const meterRef = useRef(null)
-  const { futureEnhancements, skillLevels } = portfolioData
+  const { futureEnhancements, skillLevels, sectionTitles } = portfolioData
 
   useEffect(() => {
     if (!meterRef.current) return undefined
@@ -61,7 +61,7 @@ export default function SkillsPage({ portfolioData }) {
       {/* Grid wrapper for cards */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6 xl:gap-8 items-start">
         {/* Skill bars */}
-        <Card eyebrow="Capabilities" title="Frontend strengths">
+        <Card eyebrow="Capabilities" title={sectionTitles?.skillLevels || 'Frontend strengths'}>
           <div ref={meterRef} className="space-y-6">
             {skillLevels.map((skill, i) => {
               const colors = skillColors[i % skillColors.length]

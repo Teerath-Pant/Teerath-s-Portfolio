@@ -159,6 +159,18 @@ export default function SkillsTab({ data, setData }) {
           </button>
         </div>
 
+        <div style={{ marginBottom: '1rem' }}>
+          <label className="label">Card title (shown on the Skills page)</label>
+          <input
+            type="text"
+            className="field"
+            maxLength={100}
+            value={data.sectionTitles?.skillLevels ?? ''}
+            onChange={e => setKey('sectionTitles', { ...data.sectionTitles, skillLevels: e.target.value })}
+            placeholder="Frontend strengths"
+          />
+        </div>
+
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
           {data.skillLevels.map((skill, index) => (
             <SkillRow
