@@ -1,5 +1,6 @@
 import { WorkerMailer } from 'worker-mailer'
 import type { Env } from './env'
+import { cleanCredentials, credentialHint } from './smtpCredentials'
 
 export type Mail = { to: string; subject: string; html: string; text: string; replyTo?: string }
 
@@ -14,25 +15,28 @@ const short = (e: unknown) => (e instanceof Error ? e.message : String(e)).repla
  * Credentials never appear in the returned text.
  */
 export async function sendSmtp(env: Env, mails: Mail[]): Promise<string[]> {
+  const host = env.SMTP_HOST || 'smtp.gmail.com'
+  const { user, pass } = cleanCredentials(host, env.SMTP_USER!, env.SMTP_PASS!)
   let mailer: WorkerMailer
   try {
     mailer = await WorkerMailer.connect({
-      host: env.SMTP_HOST || 'smtp.gmail.com',
+      host,
       port: Number(env.SMTP_PORT) || 465,
       secure: (env.SMTP_SECURE ?? 'true') !== 'false', // implicit TLS on 465
       startTls: false,
-      credentials: { username: env.SMTP_USER!, password: env.SMTP_PASS! },
+      credentials: { username: user, password: pass },
       authType: 'plain',
     })
   } catch (e) {
-    return mails.map(() => `failed: smtp connect: ${short(e)}`)
+    const failure = `failed: smtp connect: ${short(e)}${credentialHint(host, env.SMTP_USER!, env.SMTP_PASS!)}`
+    return mails.map(() => failure)
   }
 
   const results: string[] = []
   for (const m of mails) {
     try {
       await mailer.send({
-        from: { name: env.CONTACT_FROM_NAME || 'Portfolio', email: env.SMTP_USER! },
+        from: { name: env.CONTACT_FROM_NAME || 'Portfolio', email: user },
         to: m.to,
         reply: m.replyTo,
         subject: m.subject,
