@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion as Motion } from 'framer-motion'
-import { API_URL } from '../lib/api.js'
+import { API_URL, authFetch } from '../lib/api.js'
 
 const API = `${API_URL}/api/feedback`
 
@@ -54,7 +54,7 @@ export default function FeedbackTab() {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(API)
+      const res = await authFetch(API)
       const json = await res.json()
       if (json.ok) {
         // Sort by newest first
@@ -103,7 +103,7 @@ export default function FeedbackTab() {
           <button
             onClick={async () => {
               if (confirm('Are you sure you want to delete all feedback? This cannot be undone.')) {
-                await fetch(API, { method: 'DELETE' });
+                await authFetch(API, { method: 'DELETE' });
                 fetchFeedback();
               }
             }}

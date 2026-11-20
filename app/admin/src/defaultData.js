@@ -1,6 +1,5 @@
-// Default portfolio data — admin reads this as initial state.
-// When you hit "Save & Apply", these values get written to
-// ../web/src/data/portfolioData.js and the portfolio hot-reloads.
+// Default portfolio data — admin reads this as initial state
+// when the API returns nothing. "Save & Apply" stores data in the DB via /api/save.
 
 export const defaultData = {
   profile: {

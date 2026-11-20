@@ -8,7 +8,7 @@ import SkillsTab from './SkillsTab.jsx'
 import SocialsTab from './SocialsTab.jsx'
 import AnalyticsDashboard from './AnalyticsDashboard.jsx'
 import FeedbackTab from './FeedbackTab.jsx'
-import { API_URL } from '../lib/api.js'
+import { API_URL, authFetch } from '../lib/api.js'
 
 const STORAGE_KEY = 'portfolio_admin_data'
 
@@ -73,6 +73,13 @@ export default function AdminPanel({ onLogout }) {
           merged[key] = sourceData[key]
         }
       }
+      // Images used to be embedded as base64 `data:` URLs. The API only accepts uploaded
+      // (/api/img/...) or http(s) URLs, so drop leftovers coming from an old local draft.
+      const isData = (u) => typeof u === 'string' && u.startsWith('data:')
+      if (isData(merged.profile?.avatarUrl)) merged.profile = { ...merged.profile, avatarUrl: '' }
+      if (Array.isArray(merged.projectCards)) {
+        merged.projectCards = merged.projectCards.map(p => ({ ...p, images: (p.images || []).filter(u => !isData(u)) }))
+      }
       setData(merged)
     }
     initData()
@@ -97,7 +104,7 @@ export default function AdminPanel({ onLogout }) {
   async function saveToPortfolio() {
     setSaving(true)
     try {
-      const res = await fetch(`${API_URL}/api/save`, {
+      const res = await authFetch(`${API_URL}/api/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),

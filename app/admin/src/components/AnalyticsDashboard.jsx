@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion as Motion, AnimatePresence } from 'framer-motion'
-import { API_URL } from '../lib/api.js'
+import { API_URL, authFetch } from '../lib/api.js'
 
 const API = `${API_URL}/api/analytics`
 const EMPTY_ANALYTICS = {
@@ -214,7 +214,7 @@ export default function AnalyticsDashboard() {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(`${API}?${new URLSearchParams({ range })}`, {
+      const res = await authFetch(`${API}?${new URLSearchParams({ range })}`, {
         signal,
         cache: 'no-store',
       })
@@ -251,7 +251,7 @@ export default function AnalyticsDashboard() {
   async function toggleSelfFilter() {
     setFilterLoading(true)
     try {
-      const res = await fetch(`${API}/ignore-self`, {
+      const res = await authFetch(`${API}/ignore-self`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: selfFiltered ? 'allow' : 'ignore' }),
@@ -316,7 +316,7 @@ export default function AnalyticsDashboard() {
           <button
             onClick={async () => {
               if (confirm('Delete all analytics data? This cannot be undone.')) {
-                await fetch(API, { method: 'DELETE' })
+                await authFetch(API, { method: 'DELETE' })
                 fetchStats()
               }
             }}

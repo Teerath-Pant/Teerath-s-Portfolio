@@ -1,4 +1,5 @@
-import { API_URL } from '../lib/api.js'
+import { useState } from 'react'
+import { API_URL, uploadImage } from '../lib/api.js'
 
 const getImageUrl = (imgUrl) => {
   if (!imgUrl) return ''
@@ -22,6 +23,8 @@ function Field({ label, value, onChange, type = 'text', placeholder = '', rows }
 }
 
 export default function ProfileTab({ data, setData }) {
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState('')
   const p = data.profile
   const set = (key, val) => setData(d => ({ ...d, profile: { ...d.profile, [key]: val } }))
   const setStat = (i, key, val) => setData(d => {
@@ -53,25 +56,26 @@ export default function ProfileTab({ data, setData }) {
               id="avatar-upload" 
               onChange={async e => {
                 const file = e.target.files?.[0]
-                if (!file) return
-                const reader = new FileReader()
-                const dataUrl = await new Promise((res, rej) => {
-                  reader.onload = () => res(reader.result)
-                  reader.onerror = () => rej(reader.error)
-                  reader.readAsDataURL(file)
-                })
-                if (typeof dataUrl === 'string') {
-                  set('avatarUrl', dataUrl)
-                }
                 e.target.value = ''
+                if (!file) return
+                setUploading(true)
+                setUploadError('')
+                try {
+                  set('avatarUrl', await uploadImage(file))
+                } catch (err) {
+                  setUploadError(err.message)
+                } finally {
+                  setUploading(false)
+                }
               }}
             />
-            <button 
-              onClick={() => document.getElementById('avatar-upload').click()} 
-              className="btn btn-primary" 
+            <button
+              onClick={() => document.getElementById('avatar-upload').click()}
+              disabled={uploading}
+              className="btn btn-primary"
               style={{ fontSize: '0.75rem', padding: '0.4rem 0.8rem' }}
             >
-              Upload Image
+              {uploading ? 'Uploading…' : 'Upload Image'}
             </button>
             {p.avatarUrl && (
               <button 
@@ -83,6 +87,7 @@ export default function ProfileTab({ data, setData }) {
               </button>
             )}
           </div>
+          {uploadError && <span style={{ fontSize: '0.72rem', color: 'var(--danger)' }}>{uploadError}</span>}
         </div>
       </div>
 

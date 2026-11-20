@@ -1,17 +1,26 @@
 import { useState, useEffect } from 'react'
 import { motion as Motion, AnimatePresence } from 'framer-motion'
 import AdminPanel from './components/AdminPanel.jsx'
-import { API_URL } from './lib/api.js'
-
-const SESSION_KEY = 'admin_auth'
+import { API_URL, getToken, setToken, clearToken } from './lib/api.js'
 
 function LockScreen({ onUnlock }) {
   const [pw, setPw] = useState('')
   const [err, setErr] = useState(false)
   const [shake, setShake] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [errMsg, setErrMsg] = useState('')
+
+  function fail(msg) {
+    setErrMsg(msg)
+    setErr(true)
+    setShake(true)
+    setTimeout(() => setShake(false), 500)
+    setPw('')
+  }
 
   async function submit(e) {
     e.preventDefault()
+    setBusy(true)
     try {
       const res = await fetch(`${API_URL}/api/admin/login`, {
         method: 'POST',
@@ -21,21 +30,18 @@ function LockScreen({ onUnlock }) {
         body: JSON.stringify({ password: pw })
       })
 
-      if (res.ok) {
-        sessionStorage.setItem(SESSION_KEY, '1')
+      const json = await res.json().catch(() => null)
+      if (json?.token) {
+        setToken(json.token)
         onUnlock()
       } else {
-        setErr(true)
-        setShake(true)
-        setTimeout(() => setShake(false), 500)
-        setPw('')
+        fail(json?.error || `Login failed (${res.status})`)
       }
     } catch (error) {
       console.error('Login error:', error)
-      setErr(true)
-      setShake(true)
-      setTimeout(() => setShake(false), 500)
-      setPw('')
+      fail('Could not reach the server. Check your connection and try again.')
+    } finally {
+      setBusy(false)
     }
   }
 
@@ -95,22 +101,22 @@ function LockScreen({ onUnlock }) {
                   initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                   style={{ color: 'var(--danger)', fontSize: '0.75rem', marginTop: '0.4rem' }}
                 >
-                  Incorrect password. Try <strong>admin123</strong>
+                  {errMsg}
                 </Motion.p>
               )}
             </AnimatePresence>
           </div>
 
-          <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '0.7rem' }}>
+          <button type="submit" disabled={busy} className="btn btn-primary" style={{ width: '100%', padding: '0.7rem' }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="11" width="18" height="11" rx="2" />
               <path d="M7 11V7a5 5 0 0110 0v4" />
             </svg>
-            Sign In
+            {busy ? 'Signing in…' : 'Sign In'}
           </button>
 
           <p style={{ marginTop: '1rem', fontSize: '0.7rem', color: 'rgba(100,116,139,0.5)' }}>
-            Changes are saved to the portfolio source files
+            Changes are saved to the portfolio database
           </p>
         </Motion.form>
       </Motion.div>
@@ -119,7 +125,7 @@ function LockScreen({ onUnlock }) {
 }
 
 export default function App() {
-  const [authed, setAuthed] = useState(() => sessionStorage.getItem(SESSION_KEY) === '1')
+  const [authed, setAuthed] = useState(() => !!getToken())
 
   return (
     <AnimatePresence mode="wait">
@@ -129,7 +135,7 @@ export default function App() {
         </Motion.div>
       ) : (
         <Motion.div key="admin" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
-          <AdminPanel onLogout={() => { sessionStorage.removeItem(SESSION_KEY); setAuthed(false) }} />
+          <AdminPanel onLogout={() => { clearToken(); setAuthed(false) }} />
         </Motion.div>
       )}
     </AnimatePresence>

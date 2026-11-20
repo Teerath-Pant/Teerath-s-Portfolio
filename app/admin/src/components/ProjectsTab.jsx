@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { API_URL } from '../lib/api.js'
+import { API_URL, uploadImage } from '../lib/api.js'
 
 const getImageUrl = (imgUrl) => {
   if (!imgUrl) return ''
@@ -19,6 +19,8 @@ const TAG_COLORS = {
 
 function ProjectCard({ project, onChange, onRemove, homeProjectCount }) {
   const [open, setOpen] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState('')
   const color = TAG_COLORS[project.tag] ?? '#4f8ef7'
   const showOnHome = Boolean(project.showOnHome)
   const homeLimitReached = !showOnHome && homeProjectCount >= MAX_HOME_PROJECTS
@@ -133,27 +135,28 @@ function ProjectCard({ project, onChange, onRemove, homeProjectCount }) {
               accept="image/*" 
               className="field" 
               style={{ padding: '0.4rem', fontSize: '0.75rem' }}
+              disabled={uploading}
               onChange={async e => {
                 const files = Array.from(e.target.files)
-                if (!files.length) return
-                
-                const newImages = [...(project.images || [])]
-                for (const file of files) {
-                  const reader = new FileReader()
-                  const dataUrl = await new Promise((res, rej) => {
-                    reader.onload = () => res(reader.result)
-                    reader.onerror = () => rej(reader.error)
-                    reader.readAsDataURL(file)
-                  })
-
-                  if (typeof dataUrl === 'string') {
-                    newImages.push(dataUrl)
-                  }
-                }
-                onChange({ ...project, images: newImages })
                 e.target.value = ''
-              }} 
+                if (!files.length) return
+
+                setUploading(true)
+                setUploadError('')
+                const newImages = [...(project.images || [])]
+                try {
+                  for (const file of files) newImages.push(await uploadImage(file))
+                } catch (err) {
+                  setUploadError(err.message)
+                } finally {
+                  // keep whatever uploaded before a failure
+                  onChange({ ...project, images: newImages })
+                  setUploading(false)
+                }
+              }}
             />
+            {uploading && <p style={{ fontSize: '0.72rem', color: 'var(--muted)', marginTop: '0.3rem' }}>Uploading…</p>}
+            {uploadError && <p style={{ fontSize: '0.72rem', color: 'var(--danger)', marginTop: '0.3rem' }}>{uploadError}</p>}
           </div>
           <div>
             <label className="label">Tag</label>
